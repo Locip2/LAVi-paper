@@ -31,28 +31,11 @@ These results motivate the combination of learned initialization, geometric refi
 
 \subsection{Learned geometry comparison}
 
-Table~\ref{tab:supp_learned_geometry} compares relative geometry and recovered scale.
+The learned-geometry comparison in the main paper reports relative geometry and recovered scale.
 ViPE~\cite{huang2025vipevideoposeengine} uses its \texttt{pose\_only} profile.
 Both Pi3X and ViPE use a common UniDepthV2 scale backend.
 The native-ViPE branch retains ViPE's original geometry and was evaluated as a post-hoc diagnostic.
 Coverage uses all 16 attempted clips, while error statistics use the 14 common successful outputs.
-
-\begin{table}[htbp]
-    \centering
-    \caption{Relative geometry and scale. Error medians use 14 common successful clips. Sim3 ATE is normalized by reference path length, while coverage uses all 16 clips.}
-    \label{tab:supp_learned_geometry}
-    \small
-    \setlength{\tabcolsep}{3pt}
-    \begin{tabular}{lrrrr}
-        \toprule
-        Geometry & Full & ATE (\%) $\downarrow$ & Rot. ($^\circ$) $\downarrow$ & Scale (\%) $\downarrow$ \\
-        \midrule
-        Pi3X + BA & \textbf{16/16} & 0.127 & 0.460 & 22.17 \\
-        ViPE + BA & 14/16 & 0.125 & 0.459 & \textbf{20.64} \\
-        ViPE, native & 14/16 & \textbf{0.083} & \textbf{0.455} & 21.30 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
 
 \subsection{Scale-recovery selection}
 
