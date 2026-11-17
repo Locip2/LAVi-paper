@@ -1,36 +1,7 @@
 % !TeX root = ../main.tex
 \section{Experiments}
 \label{sec:experiments}
-
-\begin{table*}[t]
-    \centering
-    \caption{Quantitative comparison with TI2V world models on 1,350 clips. We evaluate visual fidelity and camera-trajectory adherence, with camera control measured from ViPE-recovered RGB trajectories after per-clip translation normalization. Best results are bold.}
-    \label{tab:main_comparison}
-    \small
-    \setlength{\tabcolsep}{6pt}
-    \begin{tabular}{@{}lrrrrrrrr@{}}
-        \toprule
-        & \multicolumn{2}{c}{Visual fidelity} & \multicolumn{6}{c}{Camera control} \\
-        \cmidrule(lr){2-3}\cmidrule(l){4-9}
-        Method & LPIPS$\downarrow$ & FVD$\downarrow$ & RotErr$\downarrow$ & TransErr$\downarrow$ & CamMC$\downarrow$ & CosSim$\uparrow$ & AUC@15$\uparrow$ & AUC@30$\uparrow$ \\
-        \midrule
-        minWM & 0.515 & 302.63 & 12.132 & 0.299 & 0.453 & 0.942 & 0.141 & 0.333 \\
-        SolarWM & 0.490 & 171.07 & 5.239 & 0.133 & 0.202 & 0.980 & 0.544 & 0.708 \\
-        Ours & \textbf{0.373} & \textbf{51.75} & \textbf{1.945} & \textbf{0.090} & \textbf{0.111} & \textbf{0.991} & \textbf{0.695} & \textbf{0.813} \\
-        \bottomrule
-    \end{tabular}
-\end{table*}
-We evaluate both visual fidelity and adherence to prescribed camera trajectories.
-
-\begin{figure*}[!t]
-    \centering
-    \includegraphics[width=\textwidth]{figures/qualitative_comparison.pdf}
-    \caption{Qualitative comparison of camera-conditioned TI2V world models. The examples compare scene-structure preservation and viewpoint progression.}
-    \label{fig:qualitative_comparison}
-\end{figure*}
-% Selected scenes: 019, 021, 044, 066, 079, 093 in the author's review gallery.
-% The Ours visualizations use step005427 live weights; the quantitative table
-% retains the measured DF step252 results. The figure PDF is used unchanged.
+\setcounter{dbltopnumber}{2}
 
 \subsection{Experimental setup}
 \label{sec:experiment_setup}
@@ -58,6 +29,135 @@ FVD uses all 81 frames and a shared 400-dimensional pre-softmax I3D representati
 For camera control, ViPE~\cite{huang2025vipevideoposeengine} recovers trajectories from generated RGB, independently of our predicted depth.
 We report SCoPE's framewise RotErr (degrees), TransErr, and CamMC~\cite{yin2026scope}, supplemented by pose-matrix cosine similarity (CosSim) and all-pairs relative-pose AUC at $15^\circ$/$30^\circ$~\cite{wang2025vggt}.
 Trajectories are anchored at the first frame and translations independently normalized by maximum displacement; these scores assess relative motion rather than absolute scale.
+
+\subsection{Annotation pipeline evaluation}
+\label{sec:annotation_evaluation}
+
+Conventional SfM and learning-based estimators offer several routes to camera annotation, but reference trajectories are generally unavailable for web videos.
+Our camera-pipeline validation uses 16 clips, comprising 12 GTA clips and four real-world clips.
+The simulator provides diverse scenes, realistic imagery, and recorded trajectories, enabling comparisons of reconstruction quality, runtime, and scale recovery.
+We first compare reconstruction strategies and then examine scale accuracy to select the hybrid pipeline in Sec.~\ref{sec:camera_annotation}.
+
+\paragraph{Reconstruction and scale.}
+Table~\ref{tab:pose_coverage} compares SIFT and LightGlue with COLMAP against Pi3X initialized reconstruction with shared-intrinsics BA.
+Pi3X produces complete outputs for all 16 clips in a median of 26.69 seconds, compared with 140.86 seconds for SIFT and 94.71 seconds for LightGlue.
+SIFT has the lowest median ATE on the common valid subset, while Pi3X has the lowest P90 error.
+The higher cost of conventional SfM therefore yields inconsistent accuracy gains, motivating learned initialization for large-scale annotation.
+
+\begin{table}[htbp]
+    \centering
+    \caption{SfM versus learned reconstruction. Complete outputs and median runtime use all 16 clips. Sim3 ATE is camera-center RMSE in reference-trajectory units on seven common valid clips.}
+    \label{tab:pose_coverage}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{lrrr}
+        \toprule
+        Method & Full & Time (s) $\downarrow$ & \shortstack{ATE $\downarrow$\\median / P90} \\
+        \midrule
+        SIFT + COLMAP & 10/16 & 140.86 & \textbf{0.04125} / 1.40108 \\
+        LightGlue + COLMAP & 13/16 & 94.71 & 0.88925 / 4.47273 \\
+        Pi3X + BA & \textbf{16/16} & \textbf{26.69} & 0.06356 / \textbf{0.10589} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Among learned methods, Pi3X and ViPE~\cite{huang2025vipevideoposeengine} both recover accurate relative geometry after scale alignment (Table~\ref{tab:learned_geometry}).
+Their median normalized ATE is 0.083--0.127\% and rotation error is approximately $0.46^\circ$, while scale errors remain 20.64--22.17\% under a common UniDepthV2 backend.
+We retain Pi3X for its complete-frame coverage and focus further comparison on translation scale, which determines the magnitude of camera-motion supervision.
+Native Pi3X alone has a 38.87\% median scale error on an eight-clip ablation subset, motivating the additional geometric refinement and calibrated scale recovery detailed in the Supplementary Material.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Relative geometry and scale. Error medians use 14 common successful clips. Sim3 ATE is normalized by reference path length, while coverage uses all 16 clips.}
+    \label{tab:learned_geometry}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{lrrrr}
+        \toprule
+        Geometry & Full & ATE (\%) $\downarrow$ & Rot. ($^\circ$) $\downarrow$ & Scale (\%) $\downarrow$ \\
+        \midrule
+        Pi3X + BA & \textbf{16/16} & 0.127 & 0.460 & 22.17 \\
+        ViPE + BA & 14/16 & 0.125 & 0.459 & \textbf{20.64} \\
+        ViPE, native & 14/16 & \textbf{0.083} & \textbf{0.455} & 21.30 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Calibrated scale recovery with fixed geometry. Median and P90 scale errors use 15 scorable outputs from 16 attempted clips with frozen parameters.}
+    \label{tab:scale_selection}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{lrr}
+        \toprule
+        Scale configuration & Median (\%) $\downarrow$ & P90 (\%) $\downarrow$ \\
+        \midrule
+        UniDepthV2, P98 baseline & 25.46 & 51.65 \\
+        + inverse-depth correction & \textbf{22.40} & \textbf{45.60} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Holding geometry and intrinsics fixed, inverse-depth correction reduces median scale error from 25.46\% to 22.40\% and P90 from 51.65\% to 45.60\% (Table~\ref{tab:scale_selection}).
+It achieves the lowest median error among the evaluated scale configurations, whose complete comparison appears in the Supplementary Material.
+The remaining scale error highlights the importance of directly recorded camera trajectories and depth for geometric supervision, together with real-flight observations of the intended operating conditions.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Depth annotation on 16 GTA clips. AbsRel and RMSE use the 0.1--80\,m range. Temporal log-depth error uses motion-compensated correspondences over 0.1--1,000\,m. Lower is better.}
+    \label{tab:depth_annotation_selection}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{@{}lrrr@{}}
+        \toprule
+        Configuration & AbsRel (\%) & RMSE (m) & Temporal \\
+        \midrule
+        MetricAnything & \textbf{17.69} & \textbf{9.54} & 0.03759 \\
+        + VDA stabilization & 18.20 & 9.63 & \textbf{0.02124} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table*}[t]
+    \centering
+    \caption{Quantitative comparison with TI2V world models on 1,350 clips. We evaluate visual fidelity and camera-trajectory adherence, with camera control measured from ViPE-recovered RGB trajectories after per-clip translation normalization. Best results are bold.}
+    \label{tab:main_comparison}
+    \small
+    \setlength{\tabcolsep}{6pt}
+    \begin{tabular}{@{}lrrrrrrrr@{}}
+        \toprule
+        & \multicolumn{2}{c}{Visual fidelity} & \multicolumn{6}{c}{Camera control} \\
+        \cmidrule(lr){2-3}\cmidrule(l){4-9}
+        Method & LPIPS$\downarrow$ & FVD$\downarrow$ & RotErr$\downarrow$ & TransErr$\downarrow$ & CamMC$\downarrow$ & CosSim$\uparrow$ & AUC@15$\uparrow$ & AUC@30$\uparrow$ \\
+        \midrule
+        minWM & 0.515 & 302.63 & 12.132 & 0.299 & 0.453 & 0.942 & 0.141 & 0.333 \\
+        SolarWM & 0.490 & 171.07 & 5.239 & 0.133 & 0.202 & 0.980 & 0.544 & 0.708 \\
+        Ours & \textbf{0.373} & \textbf{51.75} & \textbf{1.945} & \textbf{0.090} & \textbf{0.111} & \textbf{0.991} & \textbf{0.695} & \textbf{0.813} \\
+        \bottomrule
+    \end{tabular}
+\end{table*}
+
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/qualitative_comparison.pdf}
+    \caption{Qualitative comparison of camera-conditioned TI2V world models. The examples compare scene-structure preservation and viewpoint progression.}
+    \label{fig:qualitative_comparison}
+\end{figure*}
+
+\paragraph{Depth accuracy and temporal consistency.}
+We separately evaluate depth annotation on 16 GTA clips with reference depth, using all 81 frames per clip.
+Table~\ref{tab:depth_annotation_selection} compares MetricAnything with the selected MetricAnything--VDA combination under RGB-only inference.
+We average per-clip errors equally and measure temporal log-depth error along correspondences obtained from reference depth and camera motion.
+VDA-guided stabilization reduces temporal error from 0.03759 to 0.02124, with AbsRel changing from 17.69\% to 18.20\% and RMSE from 9.54 to 9.63\,m.
+The combination achieves the lowest temporal error among the evaluated configurations while maintaining similar per-frame depth accuracy.
+The Supplementary Material includes the full focal-input comparison and evaluation protocol.
+
+% Pose selection evidence: camera_trajectory_report.md, Sections 7.2, 7.3,
+% 7.6, 7.7, and 7.9. Validation composition follows the author's correction
+% to 12 GTA clips and four real-world clips. Common valid subsets are kept.
+% Depth evidence: metric-depth-rgb-v1.0/evidence/nok_results.csv,
+% protocol.json, and nok_protocol.json. This is a separate 16-GTA-clip panel.
 
 \subsection{Quantitative comparison}
 \label{sec:experiment_results}
@@ -105,6 +205,10 @@ These results support joint depth prediction as useful geometric supervision for
 
 \subsection{Qualitative comparison}
 \label{sec:qualitative_comparison}
+
+% Selected scenes: 019, 021, 044, 066, 079, 093 in the author's review gallery.
+% The Ours visualizations use step005427 live weights; the quantitative table
+% retains the measured DF step252 results. The figure PDF is used unchanged.
 
 Figure~\ref{fig:qualitative_comparison} shows six selected examples from real and simulated scenes.
 In these examples, minWM often shows limited viewpoint change, while SolarWM sometimes loses scene structure in later frames.

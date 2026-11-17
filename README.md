@@ -22,6 +22,8 @@ cd LAVi-paper
 | 内容 | 文件 |
 | --- | --- |
 | 论文入口 | `main.tex` |
+| 补充材料入口 | `supplementary.tex` |
+| 补充材料正文 | `sec/8_supplementary.tex` |
 | 摘要 | `sec/0_abstract.tex` |
 | 引言 | `sec/1_introduction.tex` |
 | 相关工作 | `sec/2_related_work.tex` |
@@ -39,9 +41,10 @@ cd LAVi-paper
 
 ```sh
 latexmk main.tex
+latexmk supplementary.tex
 ```
 
-结果保存在 `build/main.pdf`。也可以运行 `bash scripts/latexmk.sh`。编译产物不会进入 Git，`figures/` 中的论文插图会保留。
+正文与补充材料分别保存在 `build/main.pdf` 和 `build/supplementary.pdf`。也可以运行 `bash scripts/latexmk.sh`。编译产物不会进入 Git，`figures/` 中的论文插图会保留。
 
 ## 协作
 

@@ -1,0 +1,166 @@
+% !TeX root = ../supplementary.tex
+\section{Camera Annotation Details}
+\label{sec:supp_camera}
+
+The main paper presents the comparisons that determine our camera-annotation pipeline.
+Here we provide the component ablation, the full scale-recovery comparison, and implementation details.
+
+\subsection{Hybrid reconstruction}
+
+Table~\ref{tab:supp_hybrid} evaluates native Pi3X~\cite{wang2026pi3permutationequivariantvisualgeometry}, shared-intrinsics BA, and a direct UniDepthV2~\cite{piccinelli2025unidepthv2} scale substitution on an eight-clip subset.
+BA reduces median Sim3 ATE from 0.2079 to 0.1358 and scale error from 38.87\% to 32.95\%, with a small increase in rotation error.
+Direct depth substitution before the later calibration leaves 36.48\% scale error.
+These results motivate the combination of learned initialization, geometric refinement, and a calibrated scale stage.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Components of the hybrid camera pipeline. All configurations are valid on the same eight clips. Entries are medians, with Sim3 ATE in reference-trajectory units.}
+    \label{tab:supp_hybrid}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{lrrr}
+        \toprule
+        Configuration & Sim3 ATE $\downarrow$ & Rot. ($^\circ$) $\downarrow$ & Scale (\%) $\downarrow$ \\
+        \midrule
+        Pi3X, native & 0.2079 & \textbf{0.4252} & 38.87 \\
+        + shared-$K$ BA & \textbf{0.1358} & 0.4422 & \textbf{32.95} \\
+        \quad + UniDepthV2 scale & \textbf{0.1358} & 0.4422 & 36.48 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+For the learned-method comparison in the main paper, ViPE~\cite{huang2025vipevideoposeengine} uses its \texttt{pose\_only} profile.
+Both Pi3X and ViPE use a common UniDepthV2 scale backend.
+The native-ViPE branch retains ViPE's original geometry and was evaluated as a post-hoc diagnostic.
+Coverage uses all 16 attempted clips, while error statistics use the 14 common successful outputs.
+
+\subsection{Scale-recovery selection}
+
+Table~\ref{tab:supp_scale} includes crop augmentation, MoGe-2~\cite{wang2025moge2accuratemonoculargeometry}, and depth-model routing in addition to the baseline and selected inverse-depth correction.
+The correction achieves the lowest median scale error, while MoGe-2 and routing have lower P90 errors.
+We retain MoGe-2 as a recovery option.
+The residual median and tail errors motivate combining inferred annotations with directly recorded geometry and self-captured UAV observations.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Full scale-recovery comparison. Geometry and intrinsics are fixed. Each frozen configuration has 15 scorable outputs from 16 attempted clips.}
+    \label{tab:supp_scale}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{lrr}
+        \toprule
+        Scale configuration & Median (\%) $\downarrow$ & P90 (\%) $\downarrow$ \\
+        \midrule
+        UniDepthV2, P98 baseline & 25.46 & 51.65 \\
+        + inverse-depth correction & \textbf{22.40} & 45.60 \\
+        Crop augmentation & 26.77 & 53.15 \\
+        MoGe-2, P98 & 24.04 & 44.65 \\
+        UniDepthV2 / MoGe-2 routing & 25.05 & \textbf{44.22} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Geometric refinement and scale estimation}
+
+We transform initialized poses to the first-frame coordinate system and use a shared pinhole camera with a centered principal point.
+The initial shared focal length is the median of the predicted horizontal and vertical focal lengths across frames.
+Multiview feature tracks support triangulation and BA of poses and scene points.
+The shared focal length is refined when geometric observability and held-out reprojection checks permit it.
+A rejected focal update triggers BA with the initial focal length fixed.
+
+Scale estimation uses UniDepthV2 predictions on 32 frames distributed across the clip.
+Reliable reconstructed points provide depth anchors, balanced over a $4\!\times\!3$ spatial grid and weighted by geometric reliability and predicted depth uncertainty.
+For each frame, we robustly fit log-depth ratios between the model predictions and reconstructed optical-axis depths.
+We reject inconsistent frames, apply median-absolute-deviation filtering to frame scales, and require a retained P90/P10 ratio of at most 2.
+The 98th percentile of the retained frame scales gives the P98 baseline.
+
+The selected correction fits an affine relation between normalized inverse depths, with slope constrained to $[0.5,2]$ and offset to $[-0.3,0.3]$.
+It is accepted when held-out points improve by at least 5\% in at least four independently validated frames.
+Only the fitted slope contributes to scale conversion.
+If these checks fail, the pipeline retains the baseline scale.
+One positive scalar rescales all camera translations and reconstructed points in the clip.
+
+\section{Depth Annotation Details}
+\label{sec:supp_depth}
+
+\begin{table*}[t]
+    \centering
+    \caption{Depth annotation with focal-input and temporal-stabilization variants on 16 GTA clips. Metrics are averaged equally across clips. Lower is better.}
+    \label{tab:supp_depth}
+    \small
+    \setlength{\tabcolsep}{8pt}
+    \begin{tabular}{@{}llrrrr@{}}
+        \toprule
+        & & \multicolumn{2}{c}{AbsRel (\%)} & RMSE (m) & Temporal \\
+        \cmidrule(lr){3-4}
+        Configuration & External focal & 0.1--80\,m & 0.1--1,000\,m & 0.1--80\,m & log error \\
+        \midrule
+        MetricAnything & Yes & 20.61 & 23.80 & 10.57 & 0.03778 \\
+        MetricAnything & No & \textbf{17.69} & \textbf{21.47} & \textbf{9.54} & 0.03759 \\
+        MetricAnything + VDA & Yes & 20.93 & 24.03 & 10.72 & 0.02210 \\
+        MetricAnything + VDA & No & 18.20 & 21.86 & 9.63 & \textbf{0.02124} \\
+        \bottomrule
+    \end{tabular}
+\end{table*}
+
+\subsection{Models and temporal scale stabilization}
+
+MetricAnything Student PointMap~\cite{ma2026metricanything} predicts per-frame optical-axis depth using resolution level 9 and its internally recovered focal length.
+The metric Large (ViT-L) Video Depth Anything model~\cite{chen2025videodepthanything} runs at input size 518 with 32-frame temporal windows and 10-frame overlap.
+Both receive RGB frames in the selected configuration.
+
+Let $M_t(p)$ and $V_t(p)$ denote MetricAnything and VDA depth at pixel $p$ in frame $t$.
+We compute a robust log-depth ratio on a valid anchor set $\Omega_t$,
+\begin{equation}
+    r_t = \operatorname{median}_{p\in\Omega_t}
+    \bigl(\log M_t(p)-\log V_t(p)\bigr),
+\end{equation}
+then stabilize MetricAnything with the clip-wide median ratio,
+\begin{equation}
+    \bar r = \operatorname{median}_t r_t,
+    \qquad D_t(p) = M_t(p)\exp(\bar r-r_t).
+\end{equation}
+The framewise scalar preserves spatial structure while following VDA's relative temporal scale.
+Anchors are sampled every eight pixels within the central region of each $832\!\times\!480$ frame, excluding 40 horizontal and 24 vertical border pixels.
+We retain finite, non-sky predictions for which both depths lie between 1 and 150\,m.
+Every frame must contain an anchor and the clip must contain more than 100 anchors in total.
+Clips with insufficient support retain the original MetricAnything predictions.
+
+\subsection{Sky processing and depth encoding}
+
+The sky head of DA3METRIC-LARGE~\cite{lin2025depthanything3} operates at resolution 504.
+We align neighboring sky scores with bidirectional DIS optical flow and take a three-frame temporal median, keeping the endpoint frames unchanged.
+Correspondences with forward--backward error above 1.5 pixels at the target resolution are rejected.
+The stabilized sky-score threshold is 0.7.
+
+We downsample metric depth to $448\!\times\!256$ using validity-weighted area averaging.
+A target pixel is accepted as non-sky when its non-sky area coverage is at least $1-10^{-6}$.
+Depth is clipped to $[0.1,2000]$\,m and mapped to the shared logarithmic range,
+\begin{equation}
+    \ell(z) = 2\frac{\log(z/0.1)}{\log(2000/0.1)}-1.
+\end{equation}
+Within sky regions, the nearest valid log-depth value is extended for 16 target-resolution pixels.
+From 16 to 64 pixels, a smoothstep blend transitions to the far-depth value $+1$, which is used beyond 64 pixels and for all-sky frames.
+The resulting depth maps are replicated across three channels and encoded by the frozen Wan VAE, preserving temporal correspondence with all 81 RGB frames.
+
+\subsection{Depth evaluation protocol}
+
+The depth comparison uses a separate set of 16 GTA clips, with all 81 frames evaluated at $832\!\times\!480$.
+We compute each metric over all valid pixels in a clip, then average equally across clips.
+AbsRel is the mean absolute depth error divided by reference depth, and RMSE is reported in metres.
+Predictions are evaluated at their inferred scale.
+
+For temporal evaluation, reference depth, intrinsics, and poses project pixels into the next frame on a four-pixel sampling grid.
+We retain visible correspondences with reference depths in $[0.1,1000)$\,m and a depth-consistency tolerance of $\max(0.5\,\mathrm{m},0.03z)$.
+The temporal error is the mean absolute difference between predicted log-depth change and reference log-depth change along these motion-compensated correspondences.
+Reference geometry supplies the evaluation correspondences and visibility checks.
+
+Table~\ref{tab:supp_depth} compares external focal input and VDA stabilization.
+The selected RGB-only combination has the lowest temporal log-depth error among these configurations.
+MetricAnything alone without external focal input has lower per-frame AbsRel and RMSE over 0.1--80\,m.
+The selected combination reduces temporal error by 43.5\%, with an AbsRel increase of 0.51 percentage points and an RMSE increase of 0.09\,m in this range.
+
+% Camera details and ablations follow camera_trajectory_report.md.
+% Depth inference follows df-full-20261102/wan/scope/metric_depth_*.py.
+% Depth comparison follows metric-depth-rgb-v1.0/evidence/nok_results.csv,
+% protocol.json, and nok_protocol.json. This panel contains 16 GTA clips.
