@@ -48,6 +48,9 @@ Section~\ref{sec:annotation_evaluation} presents the selection evidence and rema
 For non-GTA videos, we generate approximately metric optical-axis depth from RGB using MetricAnything Student PointMap~\cite{ma2026metricanything} and the metric Large variant of Video Depth Anything (VDA)~\cite{chen2025videodepthanything}.
 MetricAnything provides dense per-frame geometry, while VDA guides temporal scale consistency through a robust clip-level alignment of their predictions.
 This process preserves spatial depth structure within each frame and stabilizes frame-to-frame scale variation.
+We compute per-frame median log-depth ratios on valid non-sky pixels and rescale MetricAnything predictions using deviations from the clip-wide median.
+Anchors require finite depths between 1 and 150\,m from both models.
+Clips with insufficient anchors retain their original MetricAnything predictions.
 Section~\ref{sec:annotation_evaluation} evaluates the resulting depth accuracy and temporal consistency against GTA reference depth.
 
 We identify sky regions with Depth Anything 3~\cite{lin2025depthanything3} and temporally stabilize the masks.
