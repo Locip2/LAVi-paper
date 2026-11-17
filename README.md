@@ -4,6 +4,19 @@
 
 本仓库以作者于 2026-11-17 提供的 `UranFly (1).zip` 为初始版本，保存论文正文、参考文献和全部插图。第一条提交完整保留压缩包中的 25 个文件；原始文件校验信息见 `SOURCE_ARCHIVE.json`。
 
+## 公开仓库
+
+仓库地址：[https://github.com/Locip2/LAVi-paper](https://github.com/Locip2/LAVi-paper)
+
+任何人都可以浏览和下载。获取工程：
+
+```sh
+git clone https://github.com/Locip2/LAVi-paper.git
+cd LAVi-paper
+```
+
+直接推送修改需要仓库写入权限；其他读者可以通过 Fork 和 Pull Request 提交建议。
+
 ## 文件位置
 
 | 内容 | 文件 |
@@ -55,4 +68,4 @@ git push
 
 本仓库不会自动同步到 Overleaf。在 Overleaf 中继续修改后，应先下载最新版并合并差异，再继续 Git 协作。向 Overleaf 更新时可上传相应的 `.tex`、`.bib` 和图片文件。
 
-分享前可选择私有或公开权限。私有远程仓库需要为合作者单独授予访问权限。
+本仓库按作者要求公开。Overleaf 与本仓库之间仍需手动合并更新。
