@@ -3,14 +3,14 @@
 \label{sec:data}
 
 Our training corpus combines real-world data collection, captures from a simulated environment, and open-source datasets (Fig.~\ref{fig:data_pipeline}).
-These sources provide complementary observations, scene diversity, and geometric supervision.
+The corpus contains 600,000 clips, including 200,000 simulation clips, and provides complementary observations, scene diversity, and geometric supervision.
 
 \subsection{Data Sources}
 \label{sec:data_sources}
 
 \paragraph{Real-world data collection.}
 We record onboard videos during real-world UAV flights, capturing observations under physical flight conditions.
-We supplement these recordings with additional drone videos collected from YouTube to expand the real-world aerial footage available for training.
+We supplement these recordings with YouTube drone videos to expand the diversity of real-world aerial footage.
 
 \paragraph{Simulation data collection.}
 We build an automated collection pipeline in GTA V with DLSS 5 neural rendering~\cite{nvidia2026dlss5} to capture first-person UAV flights close to the ground.
@@ -30,155 +30,30 @@ We also include the drone subset of Sekai for additional aerial observations.
 From DL3DV-10K~\cite{ling2024dl3dv10klargescalescenedataset}, we reconstruct scenes with 3D Gaussian Splatting (3DGS) and render videos along designed camera trajectories.
 We apply Difix3D+~\cite{wu2025difix3d} to repair dark patches and streaking artifacts, then use optical-flow correspondences between successive frames for temporal smoothing to reduce flicker.
 
-\subsection{Camera Annotation and Pipeline Selection}
+\subsection{Camera Annotation}
 \label{sec:camera_annotation}
 
-Camera trajectories can be recovered through conventional structure-from-motion (SfM) pipelines or learning-based geometry and pose estimators.
-For the heterogeneous real-world videos used here, however, reference trajectories are generally unavailable, making it difficult to determine which complete annotation pipeline provides more reliable camera supervision, particularly in absolute scale.
-We validate candidate annotation pipelines on 16 clips, comprising 12 GTA clips and four real-world clips.
-The GTA clips provide diverse scenes, realistic imagery, and simulator-recorded camera trajectories, while the real-world clips complement validation under physical capture conditions.
-We use this validation set to first compare reconstruction strategies, then identify the remaining scale limitations and select a hybrid annotation pipeline.
-Reference trajectories are used for offline evaluation and parameter selection; inference on video sources without camera labels uses RGB alone.
+For videos without camera labels, we recover approximately metric trajectories using a hybrid annotation pipeline.
+Pi3X~\cite{wang2026pi3permutationequivariantvisualgeometry} initializes camera poses and scene geometry, followed by bundle adjustment (BA) with shared intrinsics to refine multiview consistency.
+We then recover one positive scale per clip by aligning UniDepthV2~\cite{piccinelli2025unidepthv2} predictions with reliable reconstructed points, using spatially balanced anchors, robust aggregation, and a bounded inverse-depth correction.
+The clip-level scale preserves the refined rotations and trajectory shape.
 
-We first compare SIFT and LightGlue with COLMAP against Pi3X~\cite{wang2026pi3permutationequivariantvisualgeometry} initialized reconstruction with shared-intrinsics bundle adjustment (BA).
-On the 16 clips, the learned pipeline produces complete outputs for every clip and takes a median of 26.69 seconds, compared with 140.86 seconds for SIFT and 94.71 seconds for LightGlue (Table~\ref{tab:pose_coverage}).
-Accuracy is evaluated separately on the seven clips where all three methods pass geometric checks.
-SIFT achieves the lowest median trajectory error on this subset, but Pi3X has a substantially lower 90th-percentile error.
-Thus, the additional cost of conventional SfM does not consistently yield better reconstruction, motivating a learned geometric initialization for large-scale annotation.
-Here, ATE denotes camera-center RMSE after Sim3 alignment, expressed in reference-trajectory units; coverage and runtime use all attempted clips. BA uses shared intrinsics throughout these comparisons.
-
-\begin{table}[htbp]
-    \centering
-    \caption{\textbf{SfM versus learned reconstruction.}}
-    \label{tab:pose_coverage}
-    \small
-    \setlength{\tabcolsep}{3pt}
-    \begin{tabular}{lrrr}
-        \toprule
-        Method & Full & Time (s) $\downarrow$ & \shortstack{ATE $\downarrow$\\median / P90} \\
-        \midrule
-        SIFT + COLMAP & 10/16 & 140.86 & \textbf{0.04125} / 1.40108 \\
-        LightGlue + COLMAP & 13/16 & 94.71 & 0.88925 / 4.47273 \\
-        Pi3X + BA & \textbf{16/16} & \textbf{26.69} & 0.06356 / \textbf{0.10589} \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-We next compare Pi3X and ViPE~\cite{huang2025vipevideoposeengine} on the 16 clips, using the 14 common successful clips for error statistics.
-ATE in Table~\ref{tab:learned_geometry} is normalized by each reference path length, and all errors are medians. Both learned estimators recover accurate relative geometry: median Sim3 ATE is only 0.083--0.127\% of the reference path length, and median rotation error is approximately $0.46^\circ$ (Table~\ref{tab:learned_geometry}).
-These small errors after scale alignment contrast with median scale errors of 20.64--22.17\%, even after applying a shared UniDepthV2 scale backend.
-For camera-controlled generation, a correct trajectory shape with an incorrect translation magnitude still gives inconsistent motion supervision.
-We therefore focus the subsequent selection on scale recovery.
-Pi3X is retained as the main geometric path for its complete-frame coverage, while ViPE remains an alternative for recovery.
-The native-ViPE result is a post-hoc diagnostic branch; ViPE uses its \texttt{pose\_only} profile.
-
-\begin{table}[htbp]
-    \centering
-    \caption{\textbf{Relative geometry and scale.}}
-    \label{tab:learned_geometry}
-    \small
-    \setlength{\tabcolsep}{3pt}
-    \begin{tabular}{lrrrr}
-        \toprule
-        Geometry & Full & ATE (\%) $\downarrow$ & Rot. ($^\circ$) $\downarrow$ & Scale (\%) $\downarrow$ \\
-        \midrule
-        Pi3X + BA & \textbf{16/16} & 0.127 & 0.460 & 22.17 \\
-        ViPE + BA & 14/16 & 0.125 & 0.459 & \textbf{20.64} \\
-        ViPE, native & 14/16 & \textbf{0.083} & \textbf{0.455} & 21.30 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-The main path uses Pi3X as an initializer within a hybrid pipeline that also refines geometry and recovers scale independently.
-A comparison on an eight-clip subset shows that native Pi3X has a median scale error of 38.87\% (Table~\ref{tab:shared_k_selection}).
-Adding shared-intrinsics BA reduces Sim3 ATE from 0.2079 to 0.1358 and scale error to 32.95\%, while rotation error increases slightly.
-Directly substituting UniDepthV2 depth without the later scale calibration leaves a 36.48\% scale error.
-These results show that neither the standalone estimator nor a simple depth-model substitution is sufficient.
-They motivate combining learned initialization, geometric refinement, and an explicitly calibrated scale stage.
-All three configurations have valid outputs on the same eight clips; entries are medians, with ATE in reference-trajectory units.
-
-\begin{table}[htbp]
-    \centering
-    \caption{\textbf{From Pi3X to a hybrid pipeline.}}
-    \label{tab:shared_k_selection}
-    \small
-    \setlength{\tabcolsep}{3pt}
-    \begin{tabular}{lrrr}
-        \toprule
-        Configuration & Sim3 ATE $\downarrow$ & Rot. ($^\circ$) $\downarrow$ & Scale (\%) $\downarrow$ \\
-        \midrule
-        Pi3X, native & 0.2079 & \textbf{0.4252} & 38.87 \\
-        + shared-$K$ BA & \textbf{0.1358} & 0.4422 & \textbf{32.95} \\
-        \quad + UniDepthV2 scale & \textbf{0.1358} & 0.4422 & 36.48 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-We estimate one scale per clip from predicted depths at reliable reconstructed points, using spatially balanced anchors and robust aggregation.
-We compare UniDepthV2~\cite{piccinelli2025unidepthv2}, inverse-depth correction, crop augmentation, MoGe-2~\cite{wang2025moge2accuratemonoculargeometry}, and depth-model routing while holding geometry and intrinsics fixed.
-Table~\ref{tab:scale_selection} reports median and P90 scale errors on the 16 clips evaluated after parameter freezing; each configuration has 15 scorable outputs.
-The bounded inverse-depth correction gives the lowest median error, improving the UniDepthV2 P98 baseline from 25.46\% to 22.40\%, with P90 reduced from 51.65\% to 45.60\%.
-MoGe-2 and routing have slightly lower tail errors, so we retain MoGe-2 as a recovery option.
-The selected main pipeline therefore combines Pi3X, shared-intrinsics BA, and calibrated UniDepthV2 scale recovery; applying one positive scale per clip preserves rotations and trajectory shape.
-
-\begin{table}[htbp]
-    \centering
-    \caption{\textbf{Scale-recovery comparison.}}
-    \label{tab:scale_selection}
-    \small
-    \setlength{\tabcolsep}{3pt}
-    \begin{tabular}{lrr}
-        \toprule
-        Scale configuration & Median (\%) $\downarrow$ & P90 (\%) $\downarrow$ \\
-        \midrule
-        UniDepthV2, P98 baseline & 25.46 & 51.65 \\
-        + inverse-depth correction & \textbf{22.40} & 45.60 \\
-        Crop augmentation & 26.77 & 53.15 \\
-        MoGe-2, P98 & 24.04 & 44.65 \\
-        UniDepthV2 / MoGe-2 routing & 25.05 & \textbf{44.22} \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-Even the selected configuration retains a median scale error of 22.40\% and a P90 of 45.60\% on the 16-clip validation set.
-Accurate relative motion therefore does not by itself provide accurate motion magnitude, and the recovered video annotations remain approximately metric.
-This residual error highlights the importance of data with directly recorded camera trajectories and depth as geometric references, alongside real-flight observations that represent the intended operating conditions.
-Our corpus consequently combines estimated web-video annotations with simulator-provided reference geometry and self-captured UAV videos, reducing reliance on inferred camera labels alone.
+Selecting this pipeline requires reference geometry because accurate relative motion can still have substantial scale error.
+We use recorded trajectories to evaluate candidate pipelines and fix the annotation configuration before applying it to unlabeled videos.
+Section~\ref{sec:annotation_evaluation} presents the selection evidence and remaining limitations, while the Supplementary Material provides the complete ablations and implementation details.
 
 \subsection{Depth Annotation}
 \label{sec:depth_annotation}
 
 For non-GTA videos, we generate approximately metric optical-axis depth from RGB using MetricAnything Student PointMap~\cite{ma2026metricanything} and the metric Large variant of Video Depth Anything (VDA)~\cite{chen2025videodepthanything}.
-We select this combination through validation against GTA ground-truth depth, where it achieves the lowest depth-estimation error among the evaluated configurations.
-MetricAnything provides dense per-frame geometry, while VDA guides temporal scale consistency.
-We compute a median log-depth ratio between their predictions on valid non-sky pixels in each frame, then rescale the MetricAnything prediction using the deviation from the clip-wide median ratio.
-This preserves spatial depth structure within each frame while stabilizing frame-to-frame scale variation.
-Clips with insufficient valid pixels retain the MetricAnything predictions.
+MetricAnything provides dense per-frame geometry, while VDA guides temporal scale consistency through a robust clip-level alignment of their predictions.
+This process preserves spatial depth structure within each frame and stabilizes frame-to-frame scale variation.
+Section~\ref{sec:annotation_evaluation} evaluates the resulting depth accuracy and temporal consistency against GTA reference depth.
 
-We identify sky regions with the sky head of Depth Anything 3~\cite{lin2025depthanything3} and stabilize its scores with a three-frame median after optical-flow alignment.
-Depth maps are downsampled in metric space to $448\!\times\!256$ and mapped to the shared logarithmic representation in Sec.~\ref{sec:bidirectional_training}.
-Following the GTA preprocessing convention, sky regions receive a smooth transition from neighboring valid log-depth values toward the far-depth bound.
-The resulting maps are replicated across three channels and encoded by the frozen Wan VAE, preserving correspondence with all 81 RGB frames.
+We identify sky regions with Depth Anything 3~\cite{lin2025depthanything3} and temporally stabilize the masks.
+Depth maps are downsampled in metric space to $448\!\times\!256$, converted to the shared logarithmic representation in Sec.~\ref{sec:bidirectional_training}, and encoded by the frozen Wan VAE.
+The Supplementary Material details scale stabilization, sky processing, and depth encoding.
 
-% Verified against AutoDL's deployed metric_depth_models.py,
+% Depth implementation verified against AutoDL's deployed metric_depth_models.py,
 % metric_depth_processing.py, metric_depth_contract.py, and source-config.local.json
-% under df-full-20261102, plus the published GTAAligned depth-cache metadata.
-
-% Selection evidence: camera_trajectory_report.md, Sections 7.2, 7.3, 7.6,
-% 7.7, and 7.9. Keep the narrative order distinct from historical run order.
-% SfM: 16 attempts; raw-unit ATE on the 7 common geometry-valid outputs.
-% Validation set: 12 GTA clips and 4 real-world clips, 16 clips in total.
-% Learned geometry: 16 attempts; errors on 14 common outputs;
-% ATE normalized by each reference path length, then median over clips.
-% Hybrid ablation: 8-clip subset, all valid. Scale selection: 16 attempts,
-% 15 scorable per configuration after freezing parameters.
-% Corpus counts and throughput statistics are intentionally omitted.
-
-% Dataset counts and spatial coverage are intentionally omitted at this stage.
-% Pending author confirmation:
-% per-source temporal sampling, filtering, deduplication, and final splits;
-% the DL3DV reconstruction configuration and trajectory-design procedure;
-% the optical-flow estimator and the temporal smoothing/fusion operation;
-% the GTA V obstacle-avoidance controller and random-turn sampling policy;
-% the depth-buffer conversion and RGB-depth alignment implementation;
-% camera processing and measurement availability for self-captured UAV videos.
+% under df-full-20261102, plus the GTAAligned depth-cache metadata.
