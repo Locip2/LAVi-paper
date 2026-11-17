@@ -33,26 +33,17 @@ We apply Difix3D+~\cite{wu2025difix3d} to repair dark patches and streaking arti
 \subsection{Camera Annotation}
 \label{sec:camera_annotation}
 
-For videos without camera labels, we recover approximately metric trajectories using a hybrid annotation pipeline.
-Pi3X~\cite{wang2026pi3permutationequivariantvisualgeometry} initializes camera poses and scene geometry, followed by bundle adjustment (BA) with shared intrinsics to refine multiview consistency.
-We then recover one positive scale per clip by aligning UniDepthV2~\cite{piccinelli2025unidepthv2} predictions with reliable reconstructed points, using spatially balanced anchors, robust aggregation, and a bounded inverse-depth correction.
-The clip-level scale preserves the refined rotations and trajectory shape.
-
-Selecting this pipeline requires reference geometry because accurate relative motion can still have substantial scale error.
-We use recorded trajectories to evaluate candidate pipelines and fix the annotation configuration before applying it to unlabeled videos.
-Section~\ref{sec:annotation_evaluation} presents the selection evidence and remaining limitations, while the Supplementary Material provides the complete ablations and implementation details.
+For videos without camera labels, Pi3X~\cite{wang2026pi3permutationequivariantvisualgeometry} initializes poses and scene geometry, followed by bundle adjustment (BA) with shared intrinsics.
+We align UniDepthV2~\cite{piccinelli2025unidepthv2} predictions with reliable reconstructed points and apply bounded inverse-depth correction to recover one positive scale per clip, preserving rotations and trajectory shape.
+Section~\ref{sec:annotation_evaluation} presents the selection evidence, and the Supplementary Material gives implementation details.
 
 \subsection{Depth Annotation}
 \label{sec:depth_annotation}
 
-For non-GTA videos, we generate approximately metric optical-axis depth from RGB using MetricAnything Student PointMap~\cite{ma2026metricanything} and the metric Large variant of Video Depth Anything (VDA)~\cite{chen2025videodepthanything}.
-MetricAnything provides dense per-frame geometry, while VDA guides temporal scale consistency through a robust clip-level alignment of their predictions.
-This process preserves spatial depth structure within each frame and stabilizes frame-to-frame scale variation.
-Section~\ref{sec:annotation_evaluation} evaluates the resulting depth accuracy and temporal consistency against GTA reference depth.
-
-We identify sky regions with Depth Anything 3~\cite{lin2025depthanything3} and temporally stabilize the masks.
-Depth maps are downsampled in metric space to $448\!\times\!256$, converted to the shared logarithmic representation in Sec.~\ref{sec:bidirectional_training}, and encoded by the frozen Wan VAE.
-The Supplementary Material details scale stabilization, sky processing, and depth encoding.
+For non-GTA videos, MetricAnything Student PointMap~\cite{ma2026metricanything} provides approximately metric optical-axis depth.
+Metric Video Depth Anything (VDA) Large~\cite{chen2025videodepthanything} stabilizes framewise scale while preserving spatial structure.
+We temporally stabilize sky masks from Depth Anything 3~\cite{lin2025depthanything3}, then downsample depth and apply the shared logarithmic encoding in Sec.~\ref{sec:bidirectional_training}.
+Section~\ref{sec:annotation_evaluation} summarizes GTA validation, and the Supplementary Material details alignment and sky processing.
 
 % Depth implementation verified against AutoDL's deployed metric_depth_models.py,
 % metric_depth_processing.py, metric_depth_contract.py, and source-config.local.json
