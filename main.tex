@@ -50,7 +50,7 @@ First line of institution2 address\\
     \noindent\begin{minipage}{\textwidth}
         \centering
         \includegraphics[width=\linewidth]{figures/LAVi.pdf}
-        \captionof{figure}{\textbf{LAVi: low-altitude visual world modeling with geometric supervision.} Given an initial image, a text prompt, and a planned camera trajectory, LAVi jointly predicts future RGB observations and depth maps to support UAV simulation and navigation. The framework combines camera-annotated data construction with geometry-supervised RGB-depth generation.}
+        \captionof{figure}{\textbf{LAVi for low-altitude visual world modeling.} Given an initial image, text, and a planned camera trajectory, LAVi jointly predicts RGB observations and depth. Camera-annotated data and geometric supervision support controllable UAV simulation and navigation.}
         \label{fig:teaser}
     \end{minipage}\par
     \vspace{12pt}%
@@ -68,14 +68,14 @@ First line of institution2 address\\
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/data_pipeline.pdf}
-    \caption{\textbf{Data construction and camera annotation.} (a) We collect complementary observations from real UAV flights, simulation, and open-source videos. (b) Simulator-recorded camera trajectories provide references for offline comparison of reconstruction accuracy, coverage, runtime, and translation scale. The selected pipeline initializes geometry with Pi3X, refines it through shared-intrinsics bundle adjustment, and recovers one scale per clip using calibrated UniDepthV2 predictions at reliable reconstructed points. (c) With the configuration fixed, videos without camera labels are annotated from RGB alone, without requiring reference poses at inference. (d) The resulting approximately metric annotations are combined with simulator reference geometry and real-flight observations to form the training corpus.}
+    \caption{\textbf{Data construction and camera annotation.} (a) We combine real UAV flights, simulation, and open-source videos. (b) Simulator trajectories guide selection of Pi3X initialization, shared-intrinsics bundle adjustment, and calibrated UniDepthV2 scale recovery. (c) The fixed pipeline annotates unlabeled videos from RGB. (d) Estimated annotations join directly recorded geometry in the training corpus.}
     \label{fig:data_pipeline}
 \end{figure*}
 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/method.pdf}
-    \caption{\textbf{Camera-conditioned joint RGB--depth generation.} (a) Separate patch embeddings map noisy RGB and depth latents into tokens, which are concatenated and processed by a shared DiT backbone to exchange appearance and geometry information. Camera trajectories are represented as Pl\"ucker rays and injected into attention queries and keys through SCoPE, while timestep and label conditions modulate features through adaLN. The shared backbone then splits into modality-specific DiT branches for RGB and depth prediction. (b) Paired RGB and depth outputs at five trajectory positions illustrate viewpoint changes and corresponding scene structure across outdoor and indoor environments, with depth maps outlining foreground objects and distant scene geometry throughout the displayed camera motion.}
+    \caption{\textbf{Camera-conditioned joint RGB--depth generation.} (a) RGB and depth tokens share early DiT layers before modality-specific branches. SCoPE injects camera trajectories as Pl\"ucker rays, while timestep and label conditions modulate features through adaLN. (b) Paired predictions along five camera positions illustrate appearance and scene geometry across diverse environments.}
     \label{fig:method}
 \end{figure*}
 
@@ -85,9 +85,7 @@ First line of institution2 address\\
 \input{sec/5_experiments}
 \input{sec/6_conclusion}
 \input{sec/7_llm_usage}
-% Flush experiment floats and start the bibliography with a fresh two-column page.
-\clearpage
-\twocolumn
+% Let the bibliography follow the text without a forced page break.
 {
     \small
     \bibliographystyle{ieeenat_fullname}
