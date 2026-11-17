@@ -4,7 +4,7 @@
 \setcounter{dbltopnumber}{3}
 
 \begin{table*}[!t]
-    \begin{minipage}[t]{0.48\textwidth}
+\begin{minipage}[t]{0.48\textwidth}
     \centering
     \caption{SfM versus learned reconstruction. Complete outputs and median runtime use all 16 clips. Sim3 ATE is camera-center RMSE in reference-trajectory units on seven common valid clips.}
     \label{tab:pose_coverage}
@@ -19,8 +19,26 @@
         Pi3X + BA & \textbf{16/16} & \textbf{26.69} & 0.06356 / \textbf{0.10589} \\
         \bottomrule
     \end{tabular}
-    \end{minipage}\hfill
-    \begin{minipage}[t]{0.48\textwidth}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \caption{Relative geometry and scale. Error medians use 14 common successful clips. Sim3 ATE is normalized by reference path length, while coverage uses all 16 clips.}
+    \label{tab:learned_geometry}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{lrrrr}
+        \toprule
+        Geometry & Full & ATE (\%) $\downarrow$ & Rot. ($^\circ$) $\downarrow$ & Scale (\%) $\downarrow$ \\
+        \midrule
+        Pi3X + BA & \textbf{16/16} & 0.127 & 0.460 & 22.17 \\
+        ViPE + BA & 14/16 & 0.125 & 0.459 & \textbf{20.64} \\
+        ViPE, native & 14/16 & \textbf{0.083} & \textbf{0.455} & 21.30 \\
+        \bottomrule
+    \end{tabular}
+\end{minipage}
+
+\medskip
+\begin{minipage}[t]{0.48\textwidth}
     \centering
     \caption{Calibrated scale recovery with fixed geometry. Median and P90 scale errors use 15 scorable outputs from 16 attempted clips with frozen parameters.}
     \label{tab:scale_selection}
@@ -34,7 +52,22 @@
         + inverse-depth correction & \textbf{22.40} & \textbf{45.60} \\
         \bottomrule
     \end{tabular}
-    \end{minipage}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \caption{Depth annotation on 16 GTA clips. AbsRel and RMSE use the 0.1--80\,m range. Temporal log-depth error uses motion-compensated correspondences over 0.1--1,000\,m. Lower is better.}
+    \label{tab:depth_annotation_selection}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{@{}lrrr@{}}
+        \toprule
+        Configuration & AbsRel (\%) & RMSE (m) & Temporal \\
+        \midrule
+        MetricAnything & \textbf{17.69} & \textbf{9.54} & 0.03759 \\
+        + VDA stabilization & 18.20 & 9.63 & \textbf{0.02124} \\
+        \bottomrule
+    \end{tabular}
+\end{minipage}
 \end{table*}
 
 \begin{table*}[!t]
@@ -74,7 +107,10 @@ We select 1,350 evaluation clips from the different data sources and compare aga
 Each model receives an initial RGB frame, text, and a camera trajectory.
 We report PSNR, SSIM, LPIPS~\cite{zhang2018lpips}, and FVD~\cite{unterthiner2018fvd} for visual fidelity.
 Camera control is measured from ViPE-recovered RGB trajectories~\cite{huang2025vipevideoposeengine} using RotErr, TransErr, CamMC~\cite{yin2026scope}, CosSim, and relative-pose AUC~\cite{wang2025vggt}.
-The Supplementary Material gives preprocessing and metric details.
+For quantitative evaluation, our model and SolarWM use four denoising steps at $832\!\times\!480$ and $864\!\times\!480$, respectively.
+Pixel-level references follow each model's native preprocessing.
+ViPE estimates camera trajectories from generated RGB, and per-clip translation normalization gives relative-motion control scores.
+The Supplementary Material gives the complete preprocessing and metric definitions.
 
 \subsection{Annotation pipeline evaluation}
 \label{sec:annotation_evaluation}
@@ -87,12 +123,19 @@ SIFT achieves the lowest median ATE, while Pi3X has the lowest P90 error and run
 Conventional SfM thus provides inconsistent accuracy gains at higher computational cost.
 
 Pi3X and ViPE both recover accurate relative geometry, with median path-normalized ATE of 0.083--0.127\% and rotation error near $0.46^\circ$.
-Their median scale errors remain 20.64--22.17\% under a common UniDepthV2 backend.
-Native Pi3X alone has 38.87\% scale error on an eight-clip ablation subset, motivating geometric refinement and calibrated scale recovery.
+Their median scale errors remain 20.64--22.17\% under a common UniDepthV2 backend (Table~\ref{tab:learned_geometry}).
+Error statistics use the 14 common successful clips, while Pi3X produces complete-frame outputs for all 16 clips.
+We retain Pi3X for its coverage and examine scale calibration to improve the magnitude of camera-motion supervision.
+Native Pi3X alone has 38.87\% scale error on an eight-clip ablation subset.
+Shared-intrinsics BA reduces this error to 32.95\%, while direct UniDepthV2 substitution before calibration leaves 36.48\% error.
+These results motivate combining learned initialization, geometric refinement, and a separately calibrated scale stage.
 
 With geometry fixed, inverse-depth correction reduces median scale error from 25.46\% to 22.40\% (Table~\ref{tab:scale_selection}), the lowest among the evaluated configurations.
 The remaining 45.60\% P90 error highlights the importance of directly recorded trajectories and depth, together with real-flight observations.
-Separately, depth validation on 16 GTA clips shows that VDA stabilization reduces temporal log-depth error from 0.03759 to 0.02124, with AbsRel changing from 17.69\% to 18.20\%.
+Separately, depth validation on 16 GTA clips shows that VDA stabilization reduces temporal log-depth error from 0.03759 to 0.02124, with AbsRel changing from 17.69\% to 18.20\% (Table~\ref{tab:depth_annotation_selection}).
+Errors are computed over all 81 frames and averaged equally across clips.
+Temporal consistency is evaluated along correspondences obtained from reference depth and camera motion.
+The selected combination has the lowest temporal error among the evaluated focal-input and stabilization variants, with similar per-frame depth accuracy.
 
 % Ours follows the author's latest confirmed RGB+Depth measured results.
 % SolarWM and minWM values come from three-model-metrics.json (1,350 clips).
