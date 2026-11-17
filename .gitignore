@@ -1,0 +1,28 @@
+# LaTeX build products. Figure PDFs remain versioned.
+/build/
+/tmp/
+/main.pdf
+/rebuttal.pdf
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.bcf
+*.run.xml
+
+# Local archives, editor state, and credentials.
+*.zip
+*.bundle
+.DS_Store
+.idea/
+.env
+.env.*
+!.env.example
+*.token
+*.key
+

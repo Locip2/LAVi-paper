@@ -1,0 +1,132 @@
+{
+  "archive": "UranFly (1).zip",
+  "archive_sha256": "9e660600095bea9549c8a54f738b6b44dc38180f4030411815376ac7c5e64b40",
+  "imported_on": "2026-11-17",
+  "files": [
+    {
+      "path": ".latexmkrc",
+      "sha256": "64b8327f7b6f3d5513d71a2660a6cac32f835642bbd4dcc44a4713e63b69a0d2",
+      "bytes": 222
+    },
+    {
+      "path": "figures/qualitative_comparison.pdf",
+      "sha256": "ee53d864781be40bd12e1ffb68b84b3f7d6738cc8811b1fc0d4c0a53606d0d70",
+      "bytes": 10506746
+    },
+    {
+      "path": "figures/LAVi.pdf",
+      "sha256": "48e825deed1012d8a485056c0ece9a541f0165f47a4c9cec1fc53e304cec8122",
+      "bytes": 2970330
+    },
+    {
+      "path": "figures/method.pdf",
+      "sha256": "c2fbb72546e7d7dd046d895f29841739e44038787310fb76e20811277205ca0e",
+      "bytes": 1062545
+    },
+    {
+      "path": "figures/data_pipeline.pdf",
+      "sha256": "ee274cbfb3f0a3cb7809ec1abf0b93a69db2e823cde84d43cd04f1065f142b0d",
+      "bytes": 273757
+    },
+    {
+      "path": "sec/7_llm_usage.tex",
+      "sha256": "43ae1935acaed5ecfd54123abfddec0b0b708efdb58bbb3ef5f3b2e184fcbb92",
+      "bytes": 422
+    },
+    {
+      "path": "sec/6_conclusion.tex",
+      "sha256": "254856b422eb31a680853592b87fa49ad2a7d1915db9fa19a5bd2f87821ae47d",
+      "bytes": 1145
+    },
+    {
+      "path": "sec/5_experiments.tex",
+      "sha256": "6c5c8614c3e82c3ec419bd0deeb7501c20973945f3f7b9487b46da6da236c51b",
+      "bytes": 5038
+    },
+    {
+      "path": "sec/4_method.tex",
+      "sha256": "b4d4fa986053ce97ceeb23b13bbf47578be315c8ab83212619719a368dd9a61c",
+      "bytes": 7986
+    },
+    {
+      "path": "sec/3_data.tex",
+      "sha256": "fa428375f7b75deff1e2fc847dd34172ff826a9107b8c937faa7c6eb3cd20085",
+      "bytes": 11611
+    },
+    {
+      "path": "sec/2_related_work.tex",
+      "sha256": "f5ca9a1080bf249dce847dd1b295b64e20e1e5491157d49eff440f250bddf452",
+      "bytes": 6293
+    },
+    {
+      "path": "sec/1_introduction.tex",
+      "sha256": "5cd177fd63755573c6cec9ae3661f916d804c34265af2603ed37a0ff8c96d030",
+      "bytes": 7390
+    },
+    {
+      "path": "sec/0_abstract.tex",
+      "sha256": "d5aa312c3abe8c4ad8d19482170879781a54dcf287a4eb70c51fa8da0e4a57e9",
+      "bytes": 1919
+    },
+    {
+      "path": "scripts/latexmk.sh",
+      "sha256": "028cd6c61070036000e066cdac608dedb2e2dcd2e88dbc04b8c451df87e99ffa",
+      "bytes": 553
+    },
+    {
+      "path": "TEMPLATE_SOURCE.json",
+      "sha256": "666a8700b398d959ec52bf2fcec5bf6c703b7823ed1bc755b084b8961b5fba23",
+      "bytes": 2077
+    },
+    {
+      "path": "template_examples/main.tex",
+      "sha256": "9f6d8ef0ffaeac9494283f563d2666b125af5951f8d9604f7f805dca87460bfe",
+      "bytes": 2030
+    },
+    {
+      "path": "template_examples/main.bib",
+      "sha256": "1d6d78b4c02eae2607a40e15376f6ac96ef491e311241acd6c8a8a970ac3c1b2",
+      "bytes": 2971
+    },
+    {
+      "path": "rebuttal.tex",
+      "sha256": "e64a94a7a4c41f0758c9309983f195a5b7e85b2f8d73fd436badede9ddf5b292",
+      "bytes": 6613
+    },
+    {
+      "path": "preamble.tex",
+      "sha256": "f666a85903f49929395951e7afb620e96d4e208334623f23135298b4d7f06228",
+      "bytes": 1380
+    },
+    {
+      "path": "main.tex",
+      "sha256": "5f1e4908797c7340bbe14fb21e90d9ea6c108d6672fea43a4c2e59720ac66bc2",
+      "bytes": 5038
+    },
+    {
+      "path": "main.bib",
+      "sha256": "86cf12aa90550b2205e1b46bfa59b62a1291dc96955f92e247508db8bb6d7f15",
+      "bytes": 47727
+    },
+    {
+      "path": "ieeenat_fullname.bst",
+      "sha256": "e38e6166bd7b1e6d23a1b79dcdb55c656e4fcdbe91bdf6b50d827e6b5d1aacfc",
+      "bytes": 26900
+    },
+    {
+      "path": "cvpr.sty",
+      "sha256": "1cd7f434b13d41c475df4a1901a5d82d9ca8b80b8cf6205dc4602a5c164286b4",
+      "bytes": 17887
+    },
+    {
+      "path": "README.zh-CN.md",
+      "sha256": "99426610718fb921b9f8f1ddf7e627d963cd0419135b07a81f6da8b0023556fd",
+      "bytes": 1959
+    },
+    {
+      "path": "README.md",
+      "sha256": "82154abbe11cdbc336bfb9ecc7e6cf9f2be823c4ff18de16235f2cca2561101a",
+      "bytes": 1695
+    }
+  ]
+}
