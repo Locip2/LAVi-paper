@@ -68,7 +68,40 @@ Compared with SolarWM, LPIPS decreases by 23.8\% and FVD by 69.7\%.
 The visual gains are accompanied by more accurate camera control.
 Relative to SolarWM, our model reduces rotation error by 62.9\% and normalized translation error by 32.6\%, while AUC@30 increases from 0.708 to 0.813.
 Thus, on this evaluation panel, improved appearance is accompanied by closer adherence to the requested trajectory.
-These are comparisons of complete systems; attributing the gains to depth supervision alone requires a matched ablation.
+These comparisons evaluate complete systems; we examine the contribution of joint depth prediction separately in Sec.~\ref{sec:depth_ablation}.
+
+\subsection{Depth ablation}
+\label{sec:depth_ablation}
+
+\begin{table}[t]
+    \centering
+    \caption{Depth ablation.}
+    \label{tab:depth_ablation}
+    \small
+    \setlength{\tabcolsep}{8pt}
+    \begin{tabular}{@{}lrr@{}}
+        \toprule
+        Metric & RGB-only & RGB+Depth \\
+        \midrule
+        PSNR (dB)$\uparrow$ & 13.954 & \textbf{15.515} \\
+        SSIM$\uparrow$ & 0.39115 & \textbf{0.43722} \\
+        LPIPS$\downarrow$ & 0.40428 & \textbf{0.36595} \\
+        FVD$\downarrow$ & 52.350 & \textbf{47.874} \\
+        \midrule
+        RotErr ($^\circ$)$\downarrow$ & 2.305 & \textbf{1.876} \\
+        TransErr$\downarrow$ & 0.09501 & \textbf{0.08600} \\
+        CamMC$\downarrow$ & 0.12069 & \textbf{0.10632} \\
+        CosSim$\uparrow$ & 0.89129 & \textbf{0.99155} \\
+        AUC@15$\uparrow$ & 62.26\% & \textbf{70.49\%} \\
+        AUC@30$\uparrow$ & 72.98\% & \textbf{81.76\%} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Table~\ref{tab:depth_ablation} compares RGB-only generation with joint RGB--depth generation to assess the contribution of depth prediction and supervision.
+For this ablation, we additionally report PSNR and SSIM as complementary appearance metrics.
+Joint generation improves both visual fidelity and camera control: LPIPS decreases by 9.5\%, rotation error by 18.6\%, and AUC@30 increases by 8.78 percentage points.
+These results support joint depth prediction as useful geometric supervision for camera-conditioned video generation.
 
 \subsection{Qualitative comparison}
 \label{sec:qualitative_comparison}
