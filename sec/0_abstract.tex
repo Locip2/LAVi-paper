@@ -4,7 +4,7 @@ Visual world models offer a foundation for low-altitude unmanned aerial vehicle 
 However, missing camera annotations and inconsistent coordinate conventions and translation scales limit the reliability of supervision assembled from heterogeneous video sources.
 For camera-conditioned models trained only on RGB targets, scene structure remains implicit in the prediction objective, without direct depth supervision to constrain viewpoint-dependent geometry.
 We propose \textbf{LAVi}, a unified framework for \textbf{L}ow-\textbf{A}ltitude \textbf{Vi}sual world modeling that couples camera-annotated data construction with geometry-supervised video generation.
-We assemble 800,000 clips spanning simulation, public videos, and real UAV flights, including 470,000 simulated clips whose ground-truth trajectories guide metric-scale calibration and pose-estimator selection for camera annotation across sources.
+We assemble 600,000 clips spanning simulation, public videos, and real UAV flights, including 200,000 simulated clips whose ground-truth trajectories guide metric-scale calibration and pose-estimator selection for camera annotation across sources.
 A shared transformer with modality-specific prediction branches jointly generates RGB frames and depth maps, using metric-depth supervision to constrain scene geometry and scale.
 We directly adapt the bidirectionally trained model to few-step causal generation by combining future-frame alignment under reference histories with feature-space distribution matching of self-generated rollouts.
 % Both comparative findings were explicitly supplied by the author on 2026-11-15.

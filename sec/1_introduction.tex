@@ -30,9 +30,9 @@ These limitations motivate more reliable camera annotations and explicit supervi
 
 To this end, we propose \textbf{LAVi}, a framework for \textbf{L}ow-\textbf{A}ltitude \textbf{Vi}sual world modeling that couples ground-truth-guided camera annotation with joint RGB-depth generation.
 %
-On the data side, we assemble a corpus of 800,000 video clips spanning simulated environments, public video datasets, and real UAV flights.
+On the data side, we assemble a corpus of 600,000 video clips spanning simulated environments, public video datasets, and real UAV flights.
 %
-It includes 470,000 clips collected in our simulation environment, with ground-truth camera trajectories and depth maps, together with self-collected UAV footage covering 300,000~m$^2$.
+It includes 200,000 clips collected in our simulation environment, with ground-truth camera trajectories and depth maps, together with self-collected UAV footage covering 300,000~m$^2$.
 %
 Beyond serving as training labels, these exact, metric-scale camera trajectories provide a reference for calibrating scale recovery and selecting pose estimators based on translational and rotational errors measured against ground truth.
 %
@@ -55,7 +55,7 @@ Experiments demonstrate that our camera annotation method achieves the lowest po
 Our main contributions are summarized as follows:
 \begin{itemize}[topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=0pt]
     \item We propose \textbf{LAVi}, a unified framework for low-altitude visual world modeling that integrates camera-annotated data construction with geometry-supervised video generation, enabling joint RGB-depth prediction along prescribed flight trajectories.
-    \item We construct a corpus of 800,000 video clips spanning simulation, public datasets, and real UAV flights, including 470,000 simulated clips with exact metric camera trajectories and depth maps. These ground-truth trajectories guide scale calibration and pose-estimator selection for camera annotation and metric-scale alignment across sources.
+    \item We construct a corpus of 600,000 video clips spanning simulation, public datasets, and real UAV flights, including 200,000 simulated clips with exact metric camera trajectories and depth maps. These ground-truth trajectories guide scale calibration and pose-estimator selection for camera annotation and metric-scale alignment across sources.
     \item We develop a camera-control mechanism that combines trajectory conditioning with explicit geometric supervision through joint RGB-depth generation. This design improves camera-control accuracy, enabling more faithful adherence to prescribed camera trajectories than existing camera-controlled world models.
 \end{itemize}
 \endgroup
