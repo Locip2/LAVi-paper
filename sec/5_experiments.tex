@@ -92,7 +92,7 @@
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=\textwidth]{figures/qualitative_comparison.pdf}
-    \caption{Qualitative comparison of camera-conditioned TI2V world models. The examples compare scene-structure preservation and viewpoint progression.}
+    \caption{Qualitative comparison of camera-conditioned TI2V models, showing scene structure and viewpoint progression.}
     \label{fig:qualitative_comparison}
 \end{figure*}
 
@@ -101,14 +101,17 @@
 
 We initialize from Wan2.2-TI2V-5B and train in BF16 with the VAE and text encoder frozen.
 Clips contain 81 frames at 16\,fps, with RGB resolution $832\!\times\!480$ and depth resolution $448\!\times\!256$.
-Bidirectional training uses 2 epochs and batch size 64, followed by 250 causal-training steps with batch size 256.
+We use 2 bidirectional-training epochs with batch size 64, then 250 causal-training steps with batch size 256.
 
-We select 1,350 evaluation clips from the different data sources and compare against the text-and-image-to-video (TI2V) world models SolarWM-5B SGF Stage~2~\cite{huang2026solarwmopendatascalable} and minWM Hunyuan DMD~\cite{zhao2026minwmfullstackopensourceframework}.
+We randomly select 1,350 evaluation clips from the different data sources.
+Training and test sets are separated at the scene level, ensuring that different videos depicting the same scene do not appear in both sets.
+We compare against the text-and-image-to-video (TI2V) world models SolarWM-5B SGF Stage~2~\cite{huang2026solarwmopendatascalable} and minWM Hunyuan DMD~\cite{zhao2026minwmfullstackopensourceframework}.
 Each model receives an initial RGB frame, text, and a camera trajectory.
 We report PSNR, SSIM, LPIPS~\cite{zhang2018lpips}, and FVD~\cite{unterthiner2018fvd} for visual fidelity.
 Camera control is measured from ViPE-recovered RGB trajectories~\cite{huang2025vipevideoposeengine} using RotErr, TransErr, CamMC~\cite{yin2026scope}, CosSim, and relative-pose AUC~\cite{wang2025vggt}.
 For quantitative evaluation, our model and SolarWM use four denoising steps at $832\!\times\!480$ and $864\!\times\!480$, respectively.
 Pixel-level references follow each model's native preprocessing.
+For minWM, we apply its native camera-translation normalization to the input trajectories.
 ViPE estimates camera trajectories from generated RGB, and per-clip translation normalization gives relative-motion control scores.
 The Supplementary Material gives the complete preprocessing and metric definitions.
 
@@ -120,7 +123,7 @@ GTA provides diverse scenes, realistic images, and recorded trajectories for com
 
 Table~\ref{tab:pose_coverage} favors Pi3X initialization with shared-intrinsics BA for complete-frame coverage and runtime.
 SIFT achieves the lowest median ATE, while Pi3X has the lowest P90 error and runs substantially faster.
-Conventional SfM thus provides inconsistent accuracy gains at higher computational cost.
+Conventional SfM thus offers inconsistent accuracy gains despite higher cost.
 
 Pi3X and ViPE both recover accurate relative geometry, with median path-normalized ATE of 0.083--0.127\% and rotation error near $0.46^\circ$.
 Their median scale errors remain 20.64--22.17\% under a common UniDepthV2 backend (Table~\ref{tab:learned_geometry}).
@@ -185,6 +188,8 @@ LPIPS decreases by 9.5\%, rotation error by 18.6\%, and AUC@30 increases by 8.78
 % Selected scenes: 019, 021, 044, 066, 079, 093 in the author's review gallery.
 % The Ours visualizations use step005427 live weights.
 
-Figure~\ref{fig:qualitative_comparison} shows six selected examples from real and simulated scenes.
-In these examples, minWM often shows limited viewpoint change, while SolarWM sometimes loses scene structure in later frames.
+Figure~\ref{fig:qualitative_comparison} shows selected examples from real and simulated scenes.
+In our evaluation, directly feeding our camera trajectories to minWM without its native normalization causes generation to collapse.
+We therefore normalize the input trajectories following minWM's native convention, but the generated videos still exhibit limited camera motion.
+SolarWM produces visually coherent results under small camera motions, but larger motions can lead to severe degradation and collapse of scene structure.
 Our outputs retain recognizable scene layouts across the displayed times while producing clearer viewpoint changes.

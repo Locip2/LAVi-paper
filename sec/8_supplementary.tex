@@ -2,8 +2,8 @@
 \section{Camera Annotation Details}
 \label{sec:supp_camera}
 
-The main paper presents the comparisons that determine our camera-annotation pipeline.
-Here we provide the component ablation, the full scale-recovery comparison, and implementation details.
+The main paper compares candidate camera-annotation pipelines.
+Here we provide component ablations, the full scale-recovery comparison, and implementation details.
 
 \subsection{Hybrid reconstruction}
 
@@ -95,7 +95,7 @@ Scale estimation uses UniDepthV2 predictions on 32 frames distributed across the
 Reliable reconstructed points provide depth anchors, balanced over a $4\!\times\!3$ spatial grid and weighted by geometric reliability and predicted depth uncertainty.
 For each frame, we robustly fit log-depth ratios between the model predictions and reconstructed optical-axis depths.
 We reject inconsistent frames, apply median-absolute-deviation filtering to frame scales, and require a retained P90/P10 ratio of at most 2.
-The 98th percentile of the retained frame scales gives the P98 baseline.
+The retained frame scales' 98th percentile gives the P98 baseline.
 
 The selected correction fits an affine relation between normalized inverse depths, with slope constrained to $[0.5,2]$ and offset to $[-0.3,0.3]$.
 It is accepted when held-out points improve by at least 5\% in at least four independently validated frames.
@@ -118,16 +118,16 @@ We compute a robust log-depth ratio on a valid anchor set $\Omega_t$,
     r_t = \operatorname{median}_{p\in\Omega_t}
     \bigl(\log M_t(p)-\log V_t(p)\bigr),
 \end{equation}
-then stabilize MetricAnything with the clip-wide median ratio,
+then stabilize MetricAnything using the clip-wide median,
 \begin{equation}
     \bar r = \operatorname{median}_t r_t,
     \qquad D_t(p) = M_t(p)\exp(\bar r-r_t).
 \end{equation}
 The framewise scalar preserves spatial structure while following VDA's relative temporal scale.
-Anchors are sampled every eight pixels within the central region of each $832\!\times\!480$ frame, excluding 40 horizontal and 24 vertical border pixels.
+We sample anchors every eight pixels in the central region of each $832\!\times\!480$ frame, excluding 40 horizontal and 24 vertical border pixels.
 We retain finite, non-sky predictions for which both depths lie between 1 and 150\,m.
-Every frame must contain an anchor and the clip must contain more than 100 anchors in total.
-Clips with insufficient support retain the original MetricAnything predictions.
+Each frame must contain an anchor, with more than 100 anchors per clip.
+Otherwise, we retain the original MetricAnything predictions.
 
 \subsection{Sky processing and depth encoding}
 
@@ -138,7 +138,7 @@ The stabilized sky-score threshold is 0.7.
 
 We downsample metric depth to $448\!\times\!256$ using validity-weighted area averaging.
 A target pixel is accepted as non-sky when its non-sky area coverage is at least $1-10^{-6}$.
-Depth is clipped to $[0.1,2000]$\,m and mapped to the shared logarithmic range,
+Depth is clipped to $[0.1,2000]$\,m and log-normalized as
 \begin{equation}
     \ell(z) = 2\frac{\log(z/0.1)}{\log(2000/0.1)}-1.
 \end{equation}
@@ -171,12 +171,13 @@ The selected combination reduces temporal error by 43.5\%, with an AbsRel increa
 \section{Video Evaluation Details}
 \label{sec:supp_video_evaluation}
 
-The comparison uses 1,350 clips selected from the data sources described in the main paper, with 81 frames at 16\,fps.
+We randomly select 1,350 clips across the data sources, each with 81 frames at 16\,fps.
+The training and test sets share no scenes, even across different videos.
 Our model and SolarWM use four denoising steps at $832\!\times\!480$ and $864\!\times\!480$, respectively.
 Pixel-level references follow the corresponding native preprocessing, and minWM retains its native camera-translation normalization.
 
 PSNR, SSIM, and LPIPS with AlexNet features~\cite{zhang2018lpips} exclude the conditioning frame and are averaged equally across clips.
 FVD~\cite{unterthiner2018fvd} uses all 81 frames and a shared 400-dimensional pre-softmax I3D representation at $224\!\times\!224$ resolution.
 ViPE~\cite{huang2025vipevideoposeengine} recovers trajectories from generated RGB for camera-control evaluation.
-We report SCoPE's framewise RotErr in degrees, TransErr, and CamMC~\cite{yin2026scope}, together with pose-matrix cosine similarity and all-pairs relative-pose AUC at $15^\circ$ and $30^\circ$~\cite{wang2025vggt}.
-Trajectories are anchored at the first frame and translations are independently normalized by maximum displacement, giving relative-motion scores.
+We report SCoPE's framewise RotErr in degrees, TransErr, and CamMC~\cite{yin2026scope}, plus pose-matrix cosine similarity and all-pairs relative-pose AUC at $15^\circ$ and $30^\circ$~\cite{wang2025vggt}.
+We anchor trajectories at the first frame and normalize translations per clip by maximum displacement for relative-motion scores.

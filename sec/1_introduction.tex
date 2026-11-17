@@ -51,11 +51,11 @@ This enables few-step autoregressive generation along prescribed camera trajecto
 % Keep this results paragraph and the contribution list compact under flush-bottom layout.
 \begingroup
 \setlength{\parskip}{0pt}
-Experiments demonstrate that our camera annotation method achieves the lowest pose errors among the evaluated pipelines on data with ground-truth camera poses, while joint depth generation improves camera-control accuracy, enabling more faithful adherence to prescribed camera trajectories than existing camera-controlled world models.
+Experiments demonstrate that combining our camera-annotated training data with geometry-supervised RGB-depth generation yields the best camera-control accuracy and visual fidelity among the evaluated world models.
 Our main contributions are summarized as follows:
 \begin{itemize}[topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=0pt]
     \item We propose \textbf{LAVi}, a unified framework for low-altitude visual world modeling that integrates camera-annotated data construction with geometry-supervised video generation, enabling joint RGB-depth prediction along prescribed flight trajectories.
-    \item We construct a corpus of 600,000 video clips spanning simulation, public datasets, and real UAV flights, including 200,000 simulated clips with exact metric camera trajectories and depth maps. These ground-truth trajectories guide scale calibration and pose-estimator selection for camera annotation and metric-scale alignment across sources.
+    \item We construct a corpus of 600,000 video clips spanning simulation, public datasets, and real UAV flights, including 200,000 simulated clips with exact metric camera trajectories and depth maps. These ground-truth trajectories guide scale calibration and pose-estimator selection for camera annotation and metric-scale alignment.
     \item We develop a camera-control mechanism that combines trajectory conditioning with explicit geometric supervision through joint RGB-depth generation. This design improves camera-control accuracy, enabling more faithful adherence to prescribed camera trajectories than existing camera-controlled world models.
 \end{itemize}
 \endgroup

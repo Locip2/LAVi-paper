@@ -79,7 +79,7 @@ These terms penalize pixelwise log-depth errors and blockwise scale bias, respec
 %
 We combine them into a metric depth loss $\mathcal{L}_{\mathrm{metric}}=\lambda_{\mathrm{metric}}(\mathcal{L}_{\mathrm{abs\text{-}log}}+\mathcal{L}_{\mathrm{chunk\text{-}scale}})$, with $\lambda_{\mathrm{metric}}=0.05$.
 %
-The overall bidirectional training objective is
+The bidirectional objective is
 \begin{equation}
 \mathcal{L}_{\mathrm{bi}}=\mathcal{L}_{\mathrm{FM}}+\mathcal{L}_{\mathrm{metric}}.
 \label{eq:bidirectional_objective}
@@ -95,7 +95,7 @@ This enables attention to capture geometric relationships across viewpoints, imp
 \subsection{Direct training for few-step causal generation}
 \label{sec:causal_adaptation}
 
-After training the camera-controllable bidirectional RGB--Depth model, we further adapt it to causal generation to support the sequential prediction and interaction required by world models.
+We adapt the camera-controllable bidirectional RGB--Depth model to causal generation to support sequential prediction and interaction in world models.
 %
 Following Direct Forcing~\cite{xu2026directforcingsinglestagetraining}, we adopt block-causal temporal attention and extend Causal Continuation Alignment (CCA) and Rollout Distribution Matching (RDM) to joint RGB--Depth generation, enabling few-step autoregressive generation.
 

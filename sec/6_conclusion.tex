@@ -1,9 +1,8 @@
 % !TeX root = ../main.tex
 \section{Conclusion}
 \label{sec:conclusion}
-We presented LAVi, a framework for low-altitude visual world modeling that couples camera-annotated data construction with geometry-supervised RGB--depth generation.
-To establish camera supervision across heterogeneous video sources, we use simulator-recorded trajectories to select the annotation pipeline and calibrate its recovered translation scale.
-Using the resulting camera annotations as trajectory conditions, the model jointly predicts RGB and depth, making scene geometry an explicit learning target alongside visual appearance.
-We then adapt this joint model to few-step causal generation so that paired observations can be generated sequentially along a prescribed flight trajectory.
-Experimental results show that LAVi achieves better visual fidelity and relative camera-control accuracy than existing camera-conditioned world models.
-These results demonstrate the effectiveness of our framework for low-altitude visual world modeling, generating visually faithful observations that follow prescribed camera trajectories while providing explicit depth outputs.
+We presented LAVi, a framework for low-altitude visual world modeling that integrates camera-annotated data construction with geometry-supervised RGB--depth generation.
+Our 600,000-clip corpus spans simulation, public videos, and real UAV flights, with simulator-recorded trajectories guiding pose-estimator selection and translation-scale calibration.
+Joint RGB--depth prediction makes geometry an explicit learning target.
+The model retains metric-depth supervision during few-step causal adaptation, generating paired observations sequentially from an initial RGB frame along prescribed flight trajectories.
+Experiments show that our data and method together yield the best visual fidelity and relative camera-control accuracy among the evaluated world models across the scene-disjoint evaluation dataset.
