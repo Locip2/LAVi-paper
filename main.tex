@@ -1,0 +1,97 @@
+% CVPR 2027 Paper Template; see https://github.com/cvpr-org/author-kit
+
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+%%%%%%%%% PAPER TYPE  - PLEASE UPDATE FOR FINAL VERSION
+% \usepackage{cvpr}              % To produce the CAMERA-READY version
+\usepackage[review]{cvpr}      % To produce the REVIEW version
+% \usepackage[pagenumbers]{cvpr} % To force page numbers, e.g. for an arXiv version
+
+% Import additional packages in the preamble file, before hyperref
+\input{preamble}
+
+% It is strongly recommended to use hyperref, especially for the review version.
+% hyperref with option pagebackref eases the reviewers' job.
+% Please disable hyperref *only* if you encounter grave issues, 
+% e.g. with the file validation for the camera-ready version.
+%
+% If you comment hyperref and then uncomment it, you should delete *.aux before re-running LaTeX.
+% (Or just hit 'q' on the first LaTeX run, let it finish, and you should be clear).
+\definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
+\usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
+
+\def\confName{CVPR}
+\def\confYear{2027}
+
+%%%%%%%%% TITLE - PLEASE UPDATE
+% LAVi stands for Low-Altitude Visual.
+\title{LAVi: Low-Altitude Visual World Modeling with Geometric Supervision}
+
+%%%%%%%%% AUTHORS - PLEASE UPDATE
+\author{First Author\\
+Institution1\\
+Institution1 address\\
+{\tt\small firstauthor@i1.org}
+% For a paper whose authors are all at the same institution,
+% omit the following lines up until the closing ``}''.
+% Additional authors and addresses can be added with ``\and'',
+% just like the second author.
+% To save space, use either the email address or home page, not both
+\and
+Second Author\\
+Institution2\\
+First line of institution2 address\\
+{\tt\small secondauthor@i2.org}
+}
+
+% Keep the teaser inside the full-width title block, above the abstract.
+\makeatletter
+\g@addto@macro\@maketitle{%
+    \noindent\begin{minipage}{\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/LAVi.pdf}
+        \captionof{figure}{\textbf{LAVi: low-altitude visual world modeling with geometric supervision.} Given an initial image, a text prompt, and a planned camera trajectory, LAVi jointly predicts future RGB observations and depth maps to support UAV simulation and navigation. The framework combines camera-annotated data construction with geometry-supervised RGB-depth generation.}
+        \label{fig:teaser}
+    \end{minipage}\par
+    \vspace{12pt}%
+}
+\makeatother
+
+\begin{document}
+\maketitle
+% Each section is maintained in its own file.
+% Official author-kit examples are archived in template_examples/sec/.
+\input{sec/0_abstract}
+\input{sec/1_introduction}
+% Queue the full-width overview figures on page 2 for the next two page tops.
+\setcounter{dbltopnumber}{1}
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/data_pipeline.pdf}
+    \caption{\textbf{Data construction and camera annotation.} (a) We collect complementary observations from real UAV flights, simulation, and open-source videos. (b) Simulator-recorded camera trajectories provide references for offline comparison of reconstruction accuracy, coverage, runtime, and translation scale. The selected pipeline initializes geometry with Pi3X, refines it through shared-intrinsics bundle adjustment, and recovers one scale per clip using calibrated UniDepthV2 predictions at reliable reconstructed points. (c) With the configuration fixed, videos without camera labels are annotated from RGB alone, without requiring reference poses at inference. (d) The resulting approximately metric annotations are combined with simulator reference geometry and real-flight observations to form the training corpus.}
+    \label{fig:data_pipeline}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/method.pdf}
+    \caption{\textbf{Camera-conditioned joint RGB--depth generation.} (a) Separate patch embeddings map noisy RGB and depth latents into tokens, which are concatenated and processed by a shared DiT backbone to exchange appearance and geometry information. Camera trajectories are represented as Pl\"ucker rays and injected into attention queries and keys through SCoPE, while timestep and label conditions modulate features through adaLN. The shared backbone then splits into modality-specific DiT branches for RGB and depth prediction. (b) Paired RGB and depth outputs at five trajectory positions illustrate viewpoint changes and corresponding scene structure across outdoor and indoor environments, with depth maps outlining foreground objects and distant scene geometry throughout the displayed camera motion.}
+    \label{fig:method}
+\end{figure*}
+
+\input{sec/2_related_work}
+\input{sec/3_data}
+\input{sec/4_method}
+\input{sec/5_experiments}
+\input{sec/6_conclusion}
+\input{sec/7_llm_usage}
+% Flush experiment floats and start the bibliography with a fresh two-column page.
+\clearpage
+\twocolumn
+{
+    \small
+    \bibliographystyle{ieeenat_fullname}
+    \bibliography{main}
+}
+
+\end{document}

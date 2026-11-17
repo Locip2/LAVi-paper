@@ -1,0 +1,61 @@
+% !TeX root = ../main.tex
+% Revised 2026-10-18: expanded primary-source citation traceback; implementation/results TODOs are intentional.
+\section{Introduction}
+\label{sec:intro}
+
+
+Visual world models aim to predict how an environment evolves by generating future observations conditioned on current observations and actions~\cite{ha2018worldmodels,yang2024learninginteractiverealworldsimulators,hu2023gaia1generativeworldmodel}.
+%
+Building on advances in video generation~\cite{ho2022videodiffusionmodels,blattmann2023stablevideodiffusionscaling,yang2025cogvideoxtexttovideodiffusionmodels,kong2025hunyuanvideosystematicframeworklarge,wan2025wanopenadvancedlargescale}, recent models have enabled increasingly realistic and controllable visual rollouts driven by action inputs~\cite{bruce2024geniegenerativeinteractiveenvironments,valevski2025diffusionmodelsrealtimegame,he2026matrixgame20opensourcerealtime,zhang2026worldplay2extendingrealtimeinteractive,zhou2026astronexworld10realtimeinteractive} and camera trajectories~\cite{he2025cameractrlenablingcameracontrol,wang2024motionctrlunifiedflexiblemotion,xu2024camcocameracontrollable3dconsistentimagetovideo,zhang2026unifiedcamerapositionalencoding,huang2026solarwmopendatascalable,zhu2026sanawmefficientminutescaleworld}.
+%
+By predicting future observations under different actions or camera trajectories, these models provide a foundation for simulation, planning, and decision-making~\cite{yang2024learninginteractiverealworldsimulators,alonso2024diffusionworldmodelingvisual,gao2026dreamdojogeneralistrobotworld}.
+%
+Extending these capabilities to low-altitude unmanned aerial vehicles (UAVs) could aid in the training and evaluation of vision-based navigation systems by generating realistic onboard observations across diverse environments and flight trajectories~\cite{zhao2025airscapeaerialgenerativeworld,zhang2026aerialworldmodellonghorizon}.
+%
+However, realizing such low-altitude world models requires both flight data with accurate camera annotations and training mechanisms that align generated observations with prescribed camera trajectories.
+
+These two requirements are closely linked, as training data with reliable camera annotations are a prerequisite for developing accurate camera-trajectory control mechanisms.
+%
+On the data side, public video datasets often lack consistent camera supervision due to missing trajectory annotations or discrepancies in coordinate conventions and translation scales~\cite{ju2024miradatalargescalevideodataset,zheng2025realcamvidhighresolutionvideodataset}.
+%
+Although SolarWM~\cite{huang2026solarwmopendatascalable} and SANA-WM~\cite{zhu2026sanawmefficientminutescaleworld} combine camera-motion estimation with scale alignment based on metric-depth predictions, their pipelines for video-only data still rely on predicted geometry rather than ground-truth reference for the recovered trajectory.
+%
+This reliance on predicted geometry can propagate pose and scale errors into the training annotations, hindering the model from learning accurate camera-trajectory control.
+%
+At the method level, camera-conditioned RGB generators use camera poses as conditioning signals for video synthesis~\cite{he2025cameractrlenablingcameracontrol,huang2026solarwmopendatascalable,zhu2026sanawmefficientminutescaleworld}.
+%
+However, such conditioning leaves scene geometry to be learned implicitly from RGB supervision, without explicit constraints or supervision on the underlying 3D structure.
+%
+These limitations motivate more reliable camera annotations and explicit supervision of geometry.
+
+To this end, we propose \textbf{LAVi}, a framework for \textbf{L}ow-\textbf{A}ltitude \textbf{Vi}sual world modeling that couples ground-truth-guided camera annotation with joint RGB-depth generation.
+%
+On the data side, we assemble a corpus of 800,000 video clips spanning simulated environments, public video datasets, and real UAV flights.
+%
+It includes 470,000 clips collected in our simulation environment, with ground-truth camera trajectories and depth maps, together with self-collected UAV footage covering 300,000~m$^2$.
+%
+Beyond serving as training labels, these exact, metric-scale camera trajectories provide a reference for calibrating scale recovery and selecting pose estimators based on translational and rotational errors measured against ground truth.
+%
+The calibrated procedure and selected estimator are then integrated into a unified data construction pipeline that standardizes camera annotations across diverse video sources.
+%
+On the method side, we introduce explicit geometric supervision through joint RGB and depth generation under prescribed camera trajectories, encouraging geometrically coherent video generation under camera motion.
+%
+Supervising depth makes the arrangement and relative distances of visible surfaces explicit learning targets, providing structural cues for modeling parallax and visibility changes.
+%
+To realize this joint RGB-depth generation, we build upon Wan2.2-TI2V-5B~\cite{wan2025wanopenadvancedlargescale}, processing RGB and depth tokens through shared early Transformer blocks followed by modality-specific branches.
+%
+Training proceeds in two stages, beginning with camera-conditioned bidirectional learning using SCoPE~\cite{yin2026scope}, followed by a causal training stage that jointly aligns predictions with reference videos under ground-truth histories and matches self-generated rollouts to the reference distribution in feature space~\cite{xu2026directforcingsinglestagetraining}.
+%
+This enables few-step autoregressive generation along prescribed camera trajectories, providing a basis for a unified simulation environment with controllable flight scenarios, realistic visual observations, and explicit geometric information to aid the training and evaluation of UAV navigation systems.
+
+% Keep this results paragraph and the contribution list compact under flush-bottom layout.
+\begingroup
+\setlength{\parskip}{0pt}
+Experiments demonstrate that our camera annotation method achieves the lowest pose errors among the evaluated pipelines on data with ground-truth camera poses, while joint depth generation improves camera-control accuracy, enabling more faithful adherence to prescribed camera trajectories than existing camera-controlled world models.
+Our main contributions are summarized as follows:
+\begin{itemize}[topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=0pt]
+    \item We propose \textbf{LAVi}, a unified framework for low-altitude visual world modeling that integrates camera-annotated data construction with geometry-supervised video generation, enabling joint RGB-depth prediction along prescribed flight trajectories.
+    \item We construct a corpus of 800,000 video clips spanning simulation, public datasets, and real UAV flights, including 470,000 simulated clips with exact metric camera trajectories and depth maps. These ground-truth trajectories guide scale calibration and pose-estimator selection for camera annotation and metric-scale alignment across sources.
+    \item We develop a camera-control mechanism that combines trajectory conditioning with explicit geometric supervision through joint RGB-depth generation. This design improves camera-control accuracy, enabling more faithful adherence to prescribed camera trajectories than existing camera-controlled world models.
+\end{itemize}
+\endgroup

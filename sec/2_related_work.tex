@@ -1,0 +1,47 @@
+% !TeX root = ../main.tex
+\section{Related Work}
+\label{sec:related_work}
+
+\subsection{Camera-Controllable Visual World Models}
+\label{sec:rw_camera_models}
+
+Camera-controllable visual world models generate future observations in response to viewpoint changes, enabling sequential exploration of a visual environment.
+Earlier camera-conditioned generators, including MotionCtrl~\cite{wang2024motionctrlunifiedflexiblemotion}, CameraCtrl~\cite{he2025cameractrlenablingcameracontrol}, and CamCo~\cite{xu2024camcocameracontrollable3dconsistentimagetovideo}, establish pose-based control over video synthesis.
+Interactive systems extend this capability to ongoing user control: Matrix-Game~2.0~\cite{he2026matrixgame20opensourcerealtime} injects keyboard and mouse actions into streaming generation, while Yume~\cite{mao2025yumeinteractiveworldgeneration} maps keyboard inputs to quantized camera motions for world exploration.
+WorldPlay~\cite{sun2026worldplaylongtermgeometricconsistency} and LingBot-World~\cite{robbyantteam2026advancingopensourceworldmodels} further address scene persistence over longer interactive rollouts through mechanisms that retain historical context.
+Aerial applications introduce flight-specific observations and controls, as explored by AirScape~\cite{zhao2025airscapeaerialgenerativeworld} and Aerial World Model~\cite{zhang2026aerialworldmodellonghorizon}.
+
+Recent open systems address the inference cost and implementation complexity of long-horizon world modeling.
+Efficiency-oriented models, including SANA-WM~\cite{zhu2026sanawmefficientminutescaleworld}, Wonder~\cite{xu2026wondervideoworldmodel}, and ABot-World-0~\cite{jiang2026abotworld0infiniteinteractiveworld}, reduce the computational cost of interactive generation through efficient attention, selective history access, or optimized streaming execution.
+Complementing these model-level advances, minWM~\cite{zhao2026minwmfullstackopensourceframework}, BiWM~\cite{rui2026biwmadvancingopensourceinteractive}, and SolarWM~\cite{huang2026solarwmopendatascalable} provide reusable frameworks that organize camera-control adaptation, training, and inference into pipelines supporting multiple video backbones.
+Alongside these advances in efficiency and system design, joint appearance and depth modeling~\cite{zhu2025aethergeometricawareunifiedworld,liu2025idcnetguidedvideodiffusion,zhang2025dualcamctrldualbranchdiffusionmodel} has been explored for camera-conditioned generation.
+We couple RGB and depth prediction through a shared backbone with modality-specific branches, using metric-depth supervision to constrain geometry and scale.
+The jointly trained model is then adapted to few-step causal generation, producing paired RGB-depth rollouts from an initial RGB frame along prescribed trajectories.
+
+\subsection{Camera-Annotated Video Data}
+\label{sec:rw_camera_data}
+
+Camera-controlled generation depends on video data that associates observations with camera motion.
+DL3DV-10K~\cite{ling2024dl3dv10klargescalescenedataset} provides diverse scene captures with reconstructed camera parameters, while Sekai~\cite{li2025sekaivideodatasetworld} combines real walking and drone videos with estimated trajectories and game videos with engine-recorded camera poses.
+RealCam-Vid~\cite{zheng2025realcamvidhighresolutionvideodataset} reconstructs camera motion in dynamic scenes and aligns its scale using metric-depth predictions, while SpatialVID~\cite{wang2025spatialvidlargescalevideodataset} provides estimated poses and depth together with derived motion instructions.
+Combining such sources requires reconciling their camera conventions, translation scales, and annotation procedures.
+
+SolarWM~\cite{huang2026solarwmopendatascalable} standardizes heterogeneous sources into frame-aligned video, camera, caption, and quality records.
+SANA-WM~\cite{zhu2026sanawmefficientminutescaleworld} builds metric camera annotations using temporally consistent geometry estimation and monocular metric-depth predictions.
+Both pipelines accommodate existing camera or depth annotations, while their video-only branches recover metric geometry through estimation.
+Our data construction combines simulation, public videos, and real UAV footage, using exact metric trajectories from simulation to calibrate scale recovery and compare pose estimators against ground truth.
+The selected annotation procedure is then applied to recover camera trajectories from unannotated videos in a common metric convention.
+
+\subsection{Autoregressive Video Generation}
+\label{sec:rw_autoregressive}
+
+Autoregressive video generation produces successive frames or temporal blocks conditioned on prior observations.
+Diffusion Forcing~\cite{chen2024diffusionforcingnexttokenprediction} trains causal sequence models with independently sampled noise levels across tokens, connecting next-token prediction with sequence diffusion.
+CausVid~\cite{yin2025slowbidirectionalfastautoregressive} distills a bidirectional diffusion teacher into a few-step causal generator.
+Self Forcing~\cite{huang2025selfforcingbridgingtraintest} trains on histories generated by the model itself and applies distribution supervision, addressing the mismatch between reference histories during training and generated histories at inference.
+
+Interactive world models adopt different training strategies to support camera-controlled autoregressive generation.
+SolarWM~\cite{huang2026solarwmopendatascalable} uses bidirectional adaptation, teacher-forced autoregressive initialization, and distribution matching distillation as three successive training stages.
+BiWM~\cite{rui2026biwmadvancingopensourceinteractive} retains bidirectional attention over the current chunk and visible history while generating chunks sequentially, using control fine-tuning followed by few-step distillation.
+Direct Forcing~\cite{xu2026directforcingsinglestagetraining} instead combines future-frame feature alignment under reference histories with feature-space distribution matching under self-generated histories in one causal training stage.
+Following this training formulation, we adapt the camera-conditioned RGB-depth model directly from bidirectional learning to few-step causal generation, retaining paired appearance and geometry prediction along prescribed trajectories.

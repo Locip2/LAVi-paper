@@ -1,0 +1,151 @@
+% !TeX root = ../main.tex
+% Revised 2026-11-05: two stages, following the author's updated training recipe.
+\section{Method}
+\label{sec:method}
+
+Our model is trained in two stages to generate paired RGB observations and depth maps along prescribed camera trajectories (Fig.~\ref{fig:method}).
+The first stage learns camera-conditioned generation with bidirectional attention, using joint depth prediction to improve the geometric consistency of generated videos and their adherence to prescribed camera trajectories (Sec.~\ref{sec:bidirectional_training}).
+The second stage directly converts the bidirectional multi-step model into a few-step causal generator through supervised causal continuation under teacher forcing and feature-space distribution matching under self forcing (Sec.~\ref{sec:causal_adaptation}).
+
+\subsection{Bidirectional camera-control training}
+\label{sec:bidirectional_training}
+\label{sec:joint_generation}
+
+
+We build on Wan2.2-TI2V-5B~\cite{wan2025wanopenadvancedlargescale} to jointly predict future RGB frames and full-clip depth, conditioned on $\mathbf c=(I_0,y,\mathcal{C})$.
+%
+Here, $I_0$ is the initial RGB frame, $y$ is the text condition, and $\mathcal{C}=\{(K_t,P_t)\}_{t=0}^{T}$ specifies the camera intrinsics and poses along the trajectory.
+%
+For metric ground-truth adaptation, we spatially downsample optical-axis depth $D$ in metric space and apply logarithmic normalization to map valid depths into $[-1,1]$:
+\begin{equation}
+\begin{aligned}
+D_{\mathrm{clip}} &= \min(\max(D,a),b),\\
+g(D) &= 2\frac{\log(D_{\mathrm{clip}}/a)}{\log(b/a)}-1,
+\end{aligned}
+\label{eq:metric_depth_encoding}
+\end{equation}
+where $a=0.1$\,m and $b=2000$\,m define fixed depth bounds shared across all samples.
+
+%
+The mapped depth, with invalid regions filled, is replicated into three channels and encoded using the same frozen Wan VAE as RGB.
+%
+The first 24 transformer layers are shared by RGB and depth, allowing their concatenated tokens to exchange appearance and geometry information through bidirectional attention.
+%
+The shared layers are followed by separate RGB and depth prediction branches, each comprising six transformer layers.
+%
+Both modalities are jointly trained with linear flow matching.
+%
+For each modality $m\in\{\mathrm{rgb},\mathrm{dep}\}$, let $z_0^m$ denote its clean VAE latent, $\epsilon^m$ independently sampled Gaussian noise, and $\sigma_m$ its noise level.
+%
+Given the joint noisy latents $\mathbf z_{\boldsymbol\sigma}$ and noise conditions $\boldsymbol\sigma$, the model predicts $v_\theta^m=f_\theta^m(\mathbf z_{\boldsymbol\sigma},\boldsymbol\sigma,\mathbf c)$.
+%
+
+For each modality $m\in\{\mathrm{rgb},\mathrm{dep}\}$, we construct the noisy latent $z_{\sigma_m}^{m}=(1-\sigma_m)z_0^{m}+\sigma_m\epsilon^{m}$, with target velocity $v^{m,*}=\epsilon^{m}-z_0^{m}$.
+%
+The joint flow-matching objective is defined as
+\begin{equation}
+\mathcal{L}_{\mathrm{FM}}
+=\sum_m\mathbb{E}\!\left[
+\operatorname{MSE}(v_\theta^m,v^{m,*})
+\right].
+\label{eq:joint_flow_matching}
+\end{equation}
+
+
+To further enforce metric depth accuracy and scale consistency, we introduce additional supervision on the decoded depth predictions.
+%
+Specifically, the clean depth latent is estimated as
+\begin{equation}
+\widehat z_0^{\mathrm{dep}}
+=z_{\sigma_{\mathrm{dep}}}^{\mathrm{dep}}
+-\sigma_{\mathrm{dep}}v_{\theta}^{\mathrm{dep}},
+\label{eq:clean_depth_estimate}
+\end{equation}
+which is decoded through the frozen VAE and mapped by $g^{-1}$ to metric depth $\widehat D$.
+%
+For valid pixels $i\in\Omega$ in a sampled temporal block with $0<\sigma_{\mathrm{dep}}\leq0.8$, let $\delta_i=\log\widehat D_i-\log D_i$.
+%
+We define
+\begin{equation}
+\begin{aligned}
+\mathcal{L}_{\mathrm{abs\text{-}log}}
+&=\frac{1}{|\Omega|}\sum_{i\in\Omega}|\delta_i|,\\
+\mathcal{L}_{\mathrm{chunk\text{-}scale}}
+&=\left(\frac{1}{|\Omega|}\sum_{i\in\Omega}\delta_i\right)^2.
+\end{aligned}
+\label{eq:decoded_depth_losses}
+\end{equation}
+These terms penalize pixelwise log-depth errors and blockwise scale bias, respectively.
+%
+We combine them into a metric depth loss $\mathcal{L}_{\mathrm{metric}}=\lambda_{\mathrm{metric}}(\mathcal{L}_{\mathrm{abs\text{-}log}}+\mathcal{L}_{\mathrm{chunk\text{-}scale}})$, with $\lambda_{\mathrm{metric}}=0.05$.
+%
+The overall bidirectional training objective is
+\begin{equation}
+\mathcal{L}_{\mathrm{bi}}=\mathcal{L}_{\mathrm{FM}}+\mathcal{L}_{\mathrm{metric}}.
+\label{eq:bidirectional_objective}
+\end{equation}
+
+Complementary to the output-level depth supervision, we adopt SCoPE~\cite{yin2026scope} to incorporate explicit camera geometry into self-attention.
+%
+Specifically, SCoPE encodes each token's camera ray as a positional feature and adds it only to the attention queries and keys, while preserving the original RoPE.
+%
+This enables attention to capture geometric relationships across viewpoints, improving camera controllability and cross-frame geometric consistency.
+
+
+\subsection{Direct training for few-step causal generation}
+\label{sec:causal_adaptation}
+
+After training the camera-controllable bidirectional RGB--Depth model, we further adapt it to causal generation to support the sequential prediction and interaction required by world models.
+%
+Following Direct Forcing~\cite{xu2026directforcingsinglestagetraining}, we adopt block-causal temporal attention and extend Causal Continuation Alignment (CCA) and Rollout Distribution Matching (RDM) to joint RGB--Depth generation, enabling few-step autoregressive generation.
+
+For CCA, the model predicts clean RGB and depth latents from noisy current chunks conditioned on clean reference histories.
+%
+We employ frozen VideoMAE encoders $\psi^m$ to align the decoded predictions $\widetilde{x}^m$ with their references $x^m$ through a cosine feature loss:
+\begin{equation}
+\mathcal{L}_{\mathrm{CCA}}^m
+=\mathbb{E}\left[
+\mathcal{D}_{\mathrm{cos}}\left(
+\psi^m(\widetilde{x}^m),
+\operatorname{sg}(\psi^m(x^m))
+\right)\right],
+\label{eq:causal_cca}
+\end{equation}
+where $m\in\{\mathrm{rgb},\mathrm{dep}\}$ and $\mathcal{D}_{\mathrm{cos}}$ denotes the token-wise cosine feature distance.
+
+To account for errors accumulated during autoregressive generation, RDM matches the distributions of self-generated rollouts and reference videos.
+%
+We employ three representation spaces $\mathcal{E}=\{\mathrm{RGB\text{-}Cosmos},\mathrm{RGB\text{-}VideoMAE},\mathrm{Depth\text{-}VideoMAE}\}$, each combining visual and text features as $h_e(x,y)=[\phi_e(x),\beta_e t(y)]$.
+%
+For each space $e$, we measure the discrepancy between generated and reference distributions using squared maximum mean discrepancy (MMD) with a Gaussian kernel $k_e$, denoted by $\mathcal{D}_e=\operatorname{MMD}_{k_e}^2(\mathcal{P}_\theta^e,\mathcal{Q}^e)$.
+%
+We construct the reference distribution from 8192 fixed training samples and approximate its kernel mean using 4096 Nystr\"om landmarks.
+%
+The resulting empirical discrepancies are normalized and equally weighted:
+\begin{equation}
+\mathcal{L}_{\mathrm{RDM}}
+=\mathbb{E}_{e\sim\mathcal{U}(\mathcal{E})}
+\left[
+\frac{\widehat{\mathcal{D}}_e}
+{\operatorname{sg}(|\widehat{\mathcal{D}}_e|)+\varepsilon}
+\right].
+\label{eq:causal_rdm}
+\end{equation}
+
+
+To preserve metric depth accuracy during causal generation, we retain $\mathcal{L}_{\mathrm{metric}}$ from the bidirectional training stage.
+%
+The overall post-training objective is
+\begin{equation}
+\mathcal{L}_{\mathrm{post}}
+=\mathcal{L}_{\mathrm{RDM}}
++\operatorname{sg}(\lambda_t)
+\mathcal{L}_{\mathrm{CCA}}+\mathcal{L}_{\mathrm{metric}},
+\label{eq:causal_objective}
+\end{equation}
+where $\mathcal{L}_{\mathrm{CCA}}$ is the mean of the RGB and depth CCA losses, and $\lambda_t$ dynamically balances the RDM and paired-supervision gradients based on the relative CCA residuals and gradient norms.
+%
+By combining distribution matching, continuation alignment, and metric depth supervision, this training strategy enables coherent autoregressive RGB-Depth generation while preserving geometric consistency.
+
+
+
