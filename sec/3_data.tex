@@ -145,6 +145,24 @@ Accurate relative motion therefore does not by itself provide accurate motion ma
 This residual error highlights the importance of data with directly recorded camera trajectories and depth as geometric references, alongside real-flight observations that represent the intended operating conditions.
 Our corpus consequently combines estimated web-video annotations with simulator-provided reference geometry and self-captured UAV videos, reducing reliance on inferred camera labels alone.
 
+\subsection{Depth Annotation}
+\label{sec:depth_annotation}
+
+For non-GTA videos, we generate approximately metric optical-axis depth from RGB using MetricAnything Student PointMap~\cite{ma2026metricanything} and the metric Large variant of Video Depth Anything (VDA)~\cite{chen2025videodepthanything}.
+MetricAnything provides dense per-frame geometry, while VDA guides temporal scale consistency.
+We compute a median log-depth ratio between their predictions on valid non-sky pixels in each frame, then rescale the MetricAnything prediction using the deviation from the clip-wide median ratio.
+This preserves spatial depth structure within each frame while stabilizing frame-to-frame scale variation.
+Clips with insufficient valid pixels retain the MetricAnything predictions.
+
+We identify sky regions with the sky head of Depth Anything 3~\cite{lin2025depthanything3} and stabilize its scores with a three-frame median after optical-flow alignment.
+Depth maps are downsampled in metric space to $448\!\times\!256$ and mapped to the shared logarithmic representation in Sec.~\ref{sec:bidirectional_training}.
+Following the GTA preprocessing convention, sky regions receive a smooth transition from neighboring valid log-depth values toward the far-depth bound.
+The resulting maps are replicated across three channels and encoded by the frozen Wan VAE, preserving correspondence with all 81 RGB frames.
+
+% Verified against AutoDL's deployed metric_depth_models.py,
+% metric_depth_processing.py, metric_depth_contract.py, and source-config.local.json
+% under df-full-20261102, plus the published GTAAligned depth-cache metadata.
+
 % Selection evidence: camera_trajectory_report.md, Sections 7.2, 7.3, 7.6,
 % 7.7, and 7.9. Keep the narrative order distinct from historical run order.
 % SfM: 16 attempts; raw-unit ATE on the 7 common geometry-valid outputs.
