@@ -149,6 +149,7 @@ Our corpus consequently combines estimated web-video annotations with simulator-
 \label{sec:depth_annotation}
 
 For non-GTA videos, we generate approximately metric optical-axis depth from RGB using MetricAnything Student PointMap~\cite{ma2026metricanything} and the metric Large variant of Video Depth Anything (VDA)~\cite{chen2025videodepthanything}.
+We select this combination through validation against GTA ground-truth depth, where it achieves the lowest depth-estimation error among the evaluated configurations.
 MetricAnything provides dense per-frame geometry, while VDA guides temporal scale consistency.
 We compute a median log-depth ratio between their predictions on valid non-sky pixels in each frame, then rescale the MetricAnything prediction using the deviation from the clip-wide median ratio.
 This preserves spatial depth structure within each frame while stabilizing frame-to-frame scale variation.
