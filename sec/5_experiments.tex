@@ -4,7 +4,7 @@
 
 \begin{table*}[t]
     \centering
-    \caption{Visual fidelity and camera control on 1,350 clips.}
+    \caption{Quantitative comparison with TI2V world models on 1,350 clips. We evaluate visual fidelity and camera-trajectory adherence, with camera control measured from ViPE-recovered RGB trajectories after per-clip translation normalization. Best results are bold.}
     \label{tab:main_comparison}
     \small
     \setlength{\tabcolsep}{6pt}
@@ -25,7 +25,7 @@ We evaluate both visual fidelity and adherence to prescribed camera trajectories
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=\textwidth]{figures/qualitative_comparison.pdf}
-    \caption{Qualitative comparison}
+    \caption{Qualitative comparison of camera-conditioned TI2V world models. For each scene, rows show the reference, minWM, SolarWM, and LAVi (Ours), while columns show four times along the prescribed camera trajectory. The examples compare scene-structure preservation and viewpoint progression.}
     \label{fig:qualitative_comparison}
 \end{figure*}
 % Selected scenes: 019, 021, 044, 066, 079, 093 in the author's review gallery.
@@ -75,7 +75,7 @@ These comparisons evaluate complete systems; we examine the contribution of join
 
 \begin{table}[t]
     \centering
-    \caption{Depth ablation.}
+    \caption{Depth ablation comparing RGB-only and joint RGB--depth generation. Appearance and camera-control metrics assess the contribution of depth supervision. Best results are bold.}
     \label{tab:depth_ablation}
     \small
     \setlength{\tabcolsep}{8pt}
